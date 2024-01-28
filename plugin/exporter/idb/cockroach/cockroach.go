@@ -24,7 +24,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/algorand/indexer/idb/migration"
+	"github.com/algorand/indexer/v3/idb/migration"
 	itypes "github.com/algorand/indexer/v3/types"
 
 	sdk "github.com/algorand/go-algorand-sdk/v2/types"

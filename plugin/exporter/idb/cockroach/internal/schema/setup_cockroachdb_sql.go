@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS txn (
 CREATE INDEX IF NOT EXISTS txn_by_tixid ON txn USING HASH ( txid );
 
 -- Optional, to make txn queries by asset fast:
-CREATE INDEX IF NOT EXISTS txn_asset ON txn (asset, round, intra);
+CREATE INDEX IF NOT EXISTS txn_asset ON txn (asset, round, intra) where asset > 0;
 
 CREATE TABLE IF NOT EXISTS txn_participation (
   addr bytea NOT NULL,

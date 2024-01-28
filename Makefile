@@ -4,7 +4,7 @@ LDFLAGS += -X github.com/algorand/conduit/version.CompileTime=$(shell date -u +%
 LDFLAGS += -X "github.com/algorand/conduit/version.ReleaseVersion=Custom Plugin Build"
 
 conduit:
-	cd cmd/conduit && go build -ldflags='${LDFLAGS}'
+	cd cmd/conduit && CGO_ENABLED=0 go build -ldflags='${LDFLAGS}'
 	./cmd/conduit/conduit -v
 
 test:

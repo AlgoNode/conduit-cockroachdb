@@ -15,7 +15,6 @@ require (
 require (
 	github.com/algorand/avm-abi v0.2.0
 	github.com/algorand/go-codec/codec v1.1.10
-	github.com/algorand/indexer v0.0.0-20230616170702-3979f710eae2
 	github.com/algorand/indexer/v3 v3.4.0
 	github.com/jackc/pgconn v1.14.1
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa

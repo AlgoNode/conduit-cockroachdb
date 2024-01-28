@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
+	"io"
 	"sync"
 
 	"github.com/sirupsen/logrus"
@@ -161,4 +162,29 @@ func (exp *cockroachdbExporter) Receive(exportData data.BlockData) error {
 	}
 	exp.round = exportData.Round() + 1
 	return nil
+}
+
+// RoundRequest connects to the database, queries the round, and closes the
+// connection. If there is a problem with the configuration, an error will be
+// returned in the Init phase and this function will return 0.
+func (exp *cockroachdbExporter) RoundRequest(cfg plugins.PluginConfig) (uint64, error) {
+	nullLogger := logrus.New()
+	nullLogger.Out = io.Discard // no logging
+
+	db, _, err := createIndexerDB(nullLogger, true, cfg)
+	if err != nil {
+		// Assume the error is related to an uninitialized DB.
+		// If it is something more serious, the failure will be detected during Init.
+		return 0, nil
+	}
+
+	rnd, err := db.GetNextRoundToAccount()
+	// ignore non initialized error because that would happen during Init.
+	// This case probably wont be hit except in very unusual cases because
+	// in most cases `createIndexerDB` would fail first.
+	if err != nil && err != idb.ErrorNotInitialized {
+		return 0, fmt.Errorf("postgres.RoundRequest(): failed to get next round: %w", err)
+	}
+
+	return rnd, nil
 }
