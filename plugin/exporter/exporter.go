@@ -76,10 +76,10 @@ func (exp *cockroachdbExporter) Close() error {
 }
 
 // createIndexerDB common code for creating the IndexerDb instance.
-func createIndexerDB(logger *logrus.Logger, readonly bool, cfg plugins.PluginConfig) (idb.IndexerDb, chan struct{}, error) {
+func createIndexerDB(logger *logrus.Logger, readonly bool, cfg plugins.PluginConfig) (idb.IndexerDb, chan struct{}, ExporterConfig, error) {
 	var eCfg ExporterConfig
 	if err := cfg.UnmarshalConfig(&eCfg); err != nil {
-		return nil, nil, fmt.Errorf("connect failure in unmarshalConfig: %v", err)
+		return nil, nil, eCfg, fmt.Errorf("connect failure in unmarshalConfig: %v", err)
 	}
 
 	logger.Debugf("createIndexerDB: eCfg.Delete=%+v", eCfg.Delete)
@@ -94,7 +94,7 @@ func createIndexerDB(logger *logrus.Logger, readonly bool, cfg plugins.PluginCon
 	// connecting to a local instance that's running.
 	// this behavior can be reproduced in TestConnectDbFailure.
 	if !eCfg.Test && eCfg.ConnectionString == "" {
-		return nil, nil, fmt.Errorf("connection string is empty for %s", dbName)
+		return nil, nil, eCfg, fmt.Errorf("connection string is empty for %s", dbName)
 	}
 
 	var opts idb.IndexerDbOptions
@@ -103,20 +103,21 @@ func createIndexerDB(logger *logrus.Logger, readonly bool, cfg plugins.PluginCon
 
 	db, ready, err := idb.IndexerDbByName(dbName, eCfg.ConnectionString, opts, logger)
 	if err != nil {
-		return nil, nil, fmt.Errorf("connect failure constructing db, %s: %v", dbName, err)
+		return nil, nil, eCfg, fmt.Errorf("connect failure constructing db, %s: %v", dbName, err)
 	}
 
-	return db, ready, nil
+	return db, ready, eCfg, nil
 }
 
 func (exp *cockroachdbExporter) Init(ctx context.Context, ip data.InitProvider, cfg plugins.PluginConfig, logger *logrus.Logger) error {
 	exp.ctx, exp.cf = context.WithCancel(ctx)
 	exp.logger = logger
 
-	db, ready, err := createIndexerDB(exp.logger, false, cfg)
+	db, ready, exporterConfig, err := createIndexerDB(exp.logger, false, cfg)
 	if err != nil {
 		return fmt.Errorf("db create error: %v", err)
 	}
+	exp.cfg = exporterConfig
 	<-ready
 
 	exp.db = db
@@ -171,7 +172,7 @@ func (exp *cockroachdbExporter) RoundRequest(cfg plugins.PluginConfig) (uint64, 
 	nullLogger := logrus.New()
 	nullLogger.Out = io.Discard // no logging
 
-	db, _, err := createIndexerDB(nullLogger, true, cfg)
+	db, _, _, err := createIndexerDB(nullLogger, true, cfg)
 	if err != nil {
 		// Assume the error is related to an uninitialized DB.
 		// If it is something more serious, the failure will be detected during Init.
