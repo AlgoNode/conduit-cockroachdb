@@ -5,12 +5,14 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 
-	"github.com/algorand/conduit-cockroachdb/plugin/exporter/idb"
-	_ "github.com/algorand/conduit-cockroachdb/plugin/exporter/idb/cockroach"
+	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb"
+	_ "github.com/algonode/conduit-cockroachdb/plugin/exporter/idb/cockroach"
+	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb/cockroach/util"
 
 	"github.com/algorand/conduit/conduit/data"
 	"github.com/algorand/conduit/conduit/plugins"
@@ -38,19 +40,22 @@ func init() {
 }
 
 type ExporterConfig struct {
-	ConnectionString string `yaml:"connection-string"`
-	Test             bool   `yaml:"test"`
+	ConnectionString string                      `yaml:"connection-string"`
+	Test             bool                        `yaml:"test"`
+	MaxConn          uint32                      `yaml:"max-conn"`
+	Delete           util.CDBPruneConfigurations `yaml:"delete-task"`
 }
 
 // ExporterTemplate is the object which implements the exporter plugin interface.
 type cockroachdbExporter struct {
-	log    *logrus.Logger
 	cfg    ExporterConfig
 	ctx    context.Context
 	cf     context.CancelFunc
 	logger *logrus.Logger
 	db     idb.IndexerDb
 	round  uint64
+	wg     sync.WaitGroup
+	dm     util.CDBDataManager
 }
 
 func (exp *cockroachdbExporter) Metadata() plugins.Metadata {
@@ -76,6 +81,8 @@ func createIndexerDB(logger *logrus.Logger, readonly bool, cfg plugins.PluginCon
 		return nil, nil, fmt.Errorf("connect failure in unmarshalConfig: %v", err)
 	}
 
+	logger.Debugf("createIndexerDB: eCfg.Delete=%+v", eCfg.Delete)
+
 	// Inject a dummy db for unit testing
 	dbName := "cockroachdb"
 	if eCfg.Test {
@@ -91,6 +98,7 @@ func createIndexerDB(logger *logrus.Logger, readonly bool, cfg plugins.PluginCon
 
 	var opts idb.IndexerDbOptions
 	opts.ReadOnly = readonly
+	opts.MaxConn = eCfg.MaxConn
 
 	db, ready, err := idb.IndexerDbByName(dbName, eCfg.ConnectionString, opts, logger)
 	if err != nil {
@@ -123,6 +131,14 @@ func (exp *cockroachdbExporter) Init(ctx context.Context, ip data.InitProvider, 
 		return fmt.Errorf("initializing block round %d but next round to account is %d", ip.NextDBRound(), dbRound)
 	}
 	exp.round = uint64(ip.NextDBRound())
+
+	dataPruningEnabled := !exp.cfg.Test && exp.cfg.Delete.Rounds > 0
+	exp.logger.Debugf("cockroachdb exporter Init(): data pruning enabled: %t; exp.cfg.Delete: %+v", dataPruningEnabled, exp.cfg.Delete)
+	if dataPruningEnabled {
+		exp.dm = util.MakeDataManager(exp.ctx, &exp.cfg.Delete, exp.db, logger)
+		exp.wg.Add(1)
+		go exp.dm.DeleteLoop(&exp.wg, &exp.round)
+	}
 
 	return nil
 

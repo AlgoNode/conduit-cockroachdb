@@ -1,7 +1,7 @@
 package cockroach
 
 import (
-	"github.com/algorand/conduit-cockroachdb/plugin/exporter/idb"
+	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb"
 	log "github.com/sirupsen/logrus"
 )
 

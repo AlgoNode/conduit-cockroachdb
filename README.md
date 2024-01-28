@@ -3,10 +3,6 @@ A CockroachDB exporter plugin for Conduit.
 
 # Quickstart
 ```yaml
-make demo
+make 
 ```
 
-#### Run Indexer API 
-```yaml
-make indexerapi
-```

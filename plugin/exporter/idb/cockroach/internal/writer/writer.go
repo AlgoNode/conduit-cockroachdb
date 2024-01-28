@@ -8,10 +8,10 @@ import (
 
 	"github.com/jackc/pgx/v4"
 
+	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb"
+	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb/cockroach/internal/encoding"
+	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb/cockroach/internal/schema"
 	"github.com/algorand/avm-abi/apps"
-	"github.com/algorand/conduit-cockroachdb/plugin/exporter/idb"
-	"github.com/algorand/conduit-cockroachdb/plugin/exporter/idb/cockroach/internal/encoding"
-	"github.com/algorand/conduit-cockroachdb/plugin/exporter/idb/cockroach/internal/schema"
 	"github.com/algorand/indexer/v3/types"
 
 	sdk "github.com/algorand/go-algorand-sdk/v2/types"

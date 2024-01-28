@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	test "github.com/algorand/conduit-cockroachdb/plugin/exporter/idb/cockroach/internal/testing"
-	"github.com/algorand/conduit-cockroachdb/plugin/exporter/idb/cockroach/internal/util"
+	test "github.com/algonode/conduit-cockroachdb/plugin/exporter/idb/cockroach/internal/testing"
+	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb/cockroach/internal/util"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v4"

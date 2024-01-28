@@ -9,7 +9,7 @@ import (
 	_ "github.com/algorand/conduit/conduit/plugins/importers/all"
 	_ "github.com/algorand/conduit/conduit/plugins/processors/all"
 
-	_ "github.com/algorand/conduit-cockroachdb/plugin/exporter"
+	_ "github.com/algonode/conduit-cockroachdb/plugin/exporter"
 
 	"github.com/algorand/conduit/pkg/cli"
 )

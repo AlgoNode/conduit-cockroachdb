@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	_ "github.com/algorand/conduit-cockroachdb/plugin/exporter/idb/cockroach"
-	_ "github.com/algorand/conduit-cockroachdb/plugin/exporter/idb/dummy"
+	_ "github.com/algonode/conduit-cockroachdb/plugin/exporter/idb/cockroach"
+	_ "github.com/algonode/conduit-cockroachdb/plugin/exporter/idb/dummy"
 	sdk "github.com/algorand/go-algorand-sdk/v2/types"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
@@ -38,26 +38,26 @@ func TestExporterMetadata(t *testing.T) {
 func TestConnectDisconnectSuccess(t *testing.T) {
 	exporter := cockroachConstructor.New()
 	cfg := plugins.MakePluginConfig("test: true\nconnection-string: ''")
-	assert.NoError(t, exporter.Init(context.Background(), conduit.MakePipelineInitProvider(&round, &sdk.Genesis{}), cfg, logger))
+	assert.NoError(t, exporter.Init(context.Background(), conduit.MakePipelineInitProvider(&round, &sdk.Genesis{}, nil), cfg, logger))
 	assert.NoError(t, exporter.Close())
 }
 
 func TestConnectUnmarshalFailure(t *testing.T) {
 	exporter := cockroachConstructor.New()
 	cfg := plugins.MakePluginConfig("'")
-	assert.ErrorContains(t, exporter.Init(context.Background(), conduit.MakePipelineInitProvider(&round, nil), cfg, logger), "connect failure in unmarshalConfig")
+	assert.ErrorContains(t, exporter.Init(context.Background(), conduit.MakePipelineInitProvider(&round, nil, nil), cfg, logger), "connect failure in unmarshalConfig")
 }
 
 func TestConnectDbFailure(t *testing.T) {
 	exporter := cockroachConstructor.New()
 	cfg := plugins.MakePluginConfig("")
-	assert.ErrorContains(t, exporter.Init(context.Background(), conduit.MakePipelineInitProvider(&round, nil), cfg, logger), "connection string is empty for cockroachdb")
+	assert.ErrorContains(t, exporter.Init(context.Background(), conduit.MakePipelineInitProvider(&round, nil, nil), cfg, logger), "connection string is empty for cockroachdb")
 }
 
 func TestReceiveInvalidBlock(t *testing.T) {
 	exporter := cockroachConstructor.New()
 	cfg := plugins.MakePluginConfig("test: true")
-	assert.NoError(t, exporter.Init(context.Background(), conduit.MakePipelineInitProvider(&round, &sdk.Genesis{}), cfg, logger))
+	assert.NoError(t, exporter.Init(context.Background(), conduit.MakePipelineInitProvider(&round, &sdk.Genesis{}, nil), cfg, logger))
 	invalidBlock := data.BlockData{
 		BlockHeader: sdk.BlockHeader{
 			Round: 1,
@@ -73,7 +73,7 @@ func TestReceiveInvalidBlock(t *testing.T) {
 func TestReceiveAddBlockSuccess(t *testing.T) {
 	exporter := cockroachConstructor.New()
 	cfg := plugins.MakePluginConfig("test: true")
-	assert.NoError(t, exporter.Init(context.Background(), conduit.MakePipelineInitProvider(&round, &sdk.Genesis{}), cfg, logger))
+	assert.NoError(t, exporter.Init(context.Background(), conduit.MakePipelineInitProvider(&round, &sdk.Genesis{}, nil), cfg, logger))
 
 	block := data.BlockData{
 		BlockHeader: sdk.BlockHeader{},
@@ -89,7 +89,7 @@ func TestPostgresqlExporterInit(t *testing.T) {
 	cfg := plugins.MakePluginConfig("test: true")
 
 	// genesis hash mismatch
-	initProvider := conduit.MakePipelineInitProvider(&round, &sdk.Genesis{})
+	initProvider := conduit.MakePipelineInitProvider(&round, &sdk.Genesis{}, nil)
 	initProvider.SetGenesis(&sdk.Genesis{
 		Network: "test",
 	})
@@ -98,6 +98,6 @@ func TestPostgresqlExporterInit(t *testing.T) {
 
 	// incorrect round
 	round = 1
-	err = exporter.Init(context.Background(), conduit.MakePipelineInitProvider(&round, &sdk.Genesis{}), cfg, logger)
+	err = exporter.Init(context.Background(), conduit.MakePipelineInitProvider(&round, &sdk.Genesis{}, nil), cfg, logger)
 	assert.Contains(t, err.Error(), "initializing block round 1 but next round to account is 0")
 }

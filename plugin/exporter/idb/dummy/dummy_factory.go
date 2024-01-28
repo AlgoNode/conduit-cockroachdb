@@ -3,7 +3,7 @@ package dummy
 import (
 	log "github.com/sirupsen/logrus"
 
-	"github.com/algorand/conduit-cockroachdb/plugin/exporter/idb"
+	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb"
 )
 
 type dummyFactory struct {

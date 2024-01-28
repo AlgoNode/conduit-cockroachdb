@@ -8,13 +8,14 @@ import (
 	"fmt"
 	"math"
 	"sync"
+	"time"
 
-	"github.com/algorand/conduit-cockroachdb/plugin/exporter/idb"
-	"github.com/algorand/conduit-cockroachdb/plugin/exporter/idb/cockroach/internal/encoding"
-	"github.com/algorand/conduit-cockroachdb/plugin/exporter/idb/cockroach/internal/schema"
-	"github.com/algorand/conduit-cockroachdb/plugin/exporter/idb/cockroach/internal/types"
-	iutil "github.com/algorand/conduit-cockroachdb/plugin/exporter/idb/cockroach/internal/util"
-	"github.com/algorand/conduit-cockroachdb/plugin/exporter/idb/cockroach/internal/writer"
+	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb"
+	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb/cockroach/internal/encoding"
+	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb/cockroach/internal/schema"
+	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb/cockroach/internal/types"
+	iutil "github.com/algonode/conduit-cockroachdb/plugin/exporter/idb/cockroach/internal/util"
+	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb/cockroach/internal/writer"
 	"github.com/algorand/go-algorand-sdk/v2/protocol"
 	"github.com/algorand/go-algorand-sdk/v2/protocol/config"
 	"github.com/jackc/pgconn"
@@ -456,4 +457,45 @@ func (db *IndexerDb) Health(ctx context.Context) (idb.Health, error) {
 		DBAvailable: !blocking,
 		Error:       errString,
 	}, err
+}
+
+// DeleteTransactions removes old transactions and transaction participations
+// keep is the number of rounds to keep in db
+func (db *IndexerDb) DeleteTransactions(ctx context.Context, keep uint64) error {
+	// delete old transactions and update metastate
+	deleteTxns := func(tx pgx.Tx) error {
+		db.log.Infof("deleteTxns(): removing transactions before round %d", keep)
+		// delete query
+		query := "DELETE FROM txn WHERE round < $1"
+		cmd, err2 := tx.Exec(ctx, query, keep)
+		if err2 != nil {
+			return fmt.Errorf("deleteTxns(): transaction delete err %w", err2)
+		}
+
+		query = "DELETE FROM txn_participation WHERE round < $1"
+		cmd2, err2 := tx.Exec(ctx, query, keep)
+		if err2 != nil {
+			return fmt.Errorf("deleteTxnParticipations(): transaction delete err %w", err2)
+		}
+
+		t := time.Now().UTC()
+		// update metastate
+		status := types.DeleteStatus{
+			// format time, "2006-01-02T15:04:05Z07:00"
+			LastPruned:  t.Format(time.RFC3339),
+			OldestRound: keep,
+		}
+		err2 = db.setMetastate(tx, schema.DeleteStatusKey, string(encoding.EncodeDeleteStatus(&status)))
+		if err2 != nil {
+			return fmt.Errorf("deleteTxns(): metastate update err %w", err2)
+		}
+		db.log.Infof("%d transactions deleted, last pruned at %s", cmd.RowsAffected(), status.LastPruned)
+		db.log.Infof("%d transaction participations deleted, last pruned at %s", cmd2.RowsAffected(), status.LastPruned)
+		return nil
+	}
+	err := db.txWithRetry(serializable, deleteTxns)
+	if err != nil {
+		return fmt.Errorf("DeleteTransactions err: %w", err)
+	}
+	return nil
 }

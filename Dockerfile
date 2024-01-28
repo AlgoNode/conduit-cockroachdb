@@ -1,27 +1,16 @@
-# Build this Dockerfile with goreleaser.
-# The binary must be present at /conduit
-FROM debian:bullseye-slim
+FROM golang:1.21 as build-env
 
-# Hard code UID/GID to 999 for consistency in advanced deployments.
-# Install ca-certificates to enable using infra providers.
-# Install gosu for fancy data directory management.
-RUN groupadd --gid=999 --system algorand && \
-    useradd --uid=999 --no-log-init --create-home --system --gid algorand algorand && \
-    mkdir -p /data && \
-    chown -R algorand.algorand /data && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends gosu ca-certificates && \
-    update-ca-certificates && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+RUN groupadd -g 4160 conduit && useradd -u 4160 -g 4160 conduit
 
-COPY ./cmd/conduit/conduit /usr/local/bin/conduit
-COPY ./docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+WORKDIR /go/src/app
+COPY . /go/src/app
 
-ENV CONDUIT_DATA_DIR /data
-WORKDIR /data
-# Note: docker-entrypoint.sh calls 'conduit'. Similar entrypoint scripts
-# accept the binary as the first argument in order to surface a suite of
-# tools (i.e. algod, goal, algocfg, ...). Maybe this will change in the
-# future, but for now this approach seemed simpler.
-ENTRYPOINT ["docker-entrypoint.sh"]
+RUN make && strip cmd/conduit/conduit
+
+FROM scratch
+
+COPY --from=build-env /go/src/app/cmd/conduit/conduit /app/conduit
+COPY --from=build-env /etc/passwd /etc/passwd
+USER conduit
+
+CMD ["/app/conduit","-d","/data"]
