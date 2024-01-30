@@ -490,7 +490,7 @@ func (db *IndexerDb) DeleteTransactions(ctx context.Context, keep uint64) error 
 			return fmt.Errorf("deleteTxns(): metastate update err %w", err2)
 		}
 		db.log.Infof("%d transactions deleted, last pruned at %s", cmd.RowsAffected(), status.LastPruned)
-		db.log.Infof("%d transaction participations deleted, last pruned at %s", cmd2.RowsAffected(), status.LastPruned)
+		db.log.Infof("%d transaction participation deleted, last pruned at %s", cmd2.RowsAffected(), status.LastPruned)
 		return nil
 	}
 	err := db.txWithRetry(serializable, deleteTxns)
