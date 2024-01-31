@@ -478,6 +478,12 @@ func (db *IndexerDb) DeleteTransactions(ctx context.Context, keep uint64) error 
 			return fmt.Errorf("deleteTxnParticipations(): transaction delete err %w", err2)
 		}
 
+		query = "DELETE FROM block_header WHERE round < $1"
+		cmd3, err3 := tx.Exec(ctx, query, keep)
+		if err3 != nil {
+			return fmt.Errorf("deleteTxnParticipations(): transaction delete err %w", err3)
+		}
+
 		t := time.Now().UTC()
 		// update metastate
 		status := types.DeleteStatus{
@@ -489,8 +495,11 @@ func (db *IndexerDb) DeleteTransactions(ctx context.Context, keep uint64) error 
 		if err2 != nil {
 			return fmt.Errorf("deleteTxns(): metastate update err %w", err2)
 		}
-		db.log.Infof("%d transactions deleted, last pruned at %s", cmd.RowsAffected(), status.LastPruned)
-		db.log.Infof("%d transaction participation deleted, last pruned at %s", cmd2.RowsAffected(), status.LastPruned)
+		db.log.Infof("%d TXNs, %d TXN participations, %d block headers, last pruned at %s",
+			cmd.RowsAffected(),
+			cmd2.RowsAffected(),
+			cmd3.RowsAffected(),
+			status.LastPruned)
 		return nil
 	}
 	err := db.txWithRetry(serializable, deleteTxns)
