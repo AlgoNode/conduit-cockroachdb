@@ -95,9 +95,17 @@ func (db *IndexerDb) init(opts idb.IndexerDbOptions) (chan struct{}, error) {
 
 	if !setup {
 		// new database, run setup
+
+		// cluster settings
+		_, err = db.db.Exec(context.Background(), "SET CLUSTER SETTING kv.range.backpressure_range_size_multiplier=0")
+		if err != nil {
+			return nil, fmt.Errorf("unable to setup CRDB cluster: %v", err)
+		}
+
+		// create schema
 		_, err = db.db.Exec(context.Background(), schema.SetupCockroachSql)
 		if err != nil {
-			return nil, fmt.Errorf("unable to setup postgres: %v", err)
+			return nil, fmt.Errorf("unable to setup CRDB schema: %v", err)
 		}
 
 		ch := make(chan struct{})

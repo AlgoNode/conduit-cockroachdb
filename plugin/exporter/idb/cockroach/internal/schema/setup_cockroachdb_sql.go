@@ -4,7 +4,6 @@ package schema
 
 const SetupCockroachSql = `
 -- TODO? replace all 'addr bytea' with 'addr_id bigint' and a mapping table? makes addrs an 8 byte int that fits in a register instead of a 32 byte string
-SET CLUSTER SETTING kv.range.backpressure_range_size_multiplier=0;
 
 SET default_int_size = 8;
 
@@ -31,7 +30,7 @@ CREATE TABLE IF NOT EXISTS txn (
 );
 
 -- For transaction lookup
-CREATE INDEX IF NOT EXISTS txn_by_tixid ON txn USING HASH ( txid );
+CREATE INDEX IF NOT EXISTS txn_by_tixid ON txn ( txid );
 
 -- Optional, to make txn queries by asset fast:
 CREATE INDEX IF NOT EXISTS txn_asset ON txn (asset, round, intra) where asset > 0;
