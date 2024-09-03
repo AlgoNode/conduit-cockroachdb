@@ -78,9 +78,6 @@ func newWorkerPool(
 		roundsCh:   roundsCh,
 		numWorkers: numWorkers,
 
-		//rounds: // zero value is valid
-		//mutex: // zero value is valid
-
 		// invariant: windowLog points to the first round in the sliding window.
 		windowLow: initialRound,
 		// invariant: windowHigh points one round above the sliding window.
@@ -97,8 +94,6 @@ func newWorkerPool(
 func (wp *workerPool) close() {
 	close(wp.jobsCh)
 	wp.cancelFunc()
-	//TODO close wp.roundsCh
-	//TODO Do we wait until all workers exit gracefully? We probably don't care
 }
 
 func (wp *workerPool) getItem(rnd uint64) types.Round {
@@ -137,7 +132,6 @@ func (wp *workerPool) getItem(rnd uint64) types.Round {
 		}
 
 		// wait for more data
-		//wp.logger.Info("waiting on roundsCh")
 		item := <-wp.roundsCh
 		wp.rounds.Push(uint64(item))
 	}
@@ -210,8 +204,6 @@ func tipFollowerEntrypoint(
 		}
 
 		// Wait for the next round
-		// TODO Probably should add a timeout enforced by us here
-		// TODO We could do an optimization here if the sliding window is too far away from the last round.
 		status, err := client.StatusAfterBlock(lastRound).Do(ctx)
 		if err != nil {
 			if errors.Is(err, context.Canceled) {
