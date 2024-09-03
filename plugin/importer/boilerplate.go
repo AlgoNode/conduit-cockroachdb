@@ -65,7 +65,7 @@ func (it *importerTemplate) Init(ctx context.Context, initProvider data.InitProv
 	if err = cfg.UnmarshalConfig(&it.cfg); err != nil {
 		return fmt.Errorf("unable to read configuration: %w", err)
 	}
-	it.wp, err = newWorkerPool(ctx, logger, 3, initProvider.NextDBRound()) //FIXME hardcoded value
+	it.wp, err = newWorkerPool(ctx, logger, 3, uint64(initProvider.NextDBRound())) //FIXME hardcoded value
 	if err != nil {
 		return fmt.Errorf("failed to initialize worker pool: %w", err)
 	}
