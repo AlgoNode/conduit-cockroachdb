@@ -78,9 +78,13 @@ func newWorkerPool(
 		numWorkers: numWorkers,
 
 		//rounds: // zero value is valid
+		//mutex: // zero value is valid
 
-		windowLow:  initialRound,
-		windowHigh: initialRound, //FIXME this invariant is weird
+		// invariant: windowLog points to the first round in the sliding window.
+		windowLow: initialRound,
+		// invariant: windowHigh points one round above the sliding window.
+		// Upon initialization, the sliding window has size=0, which results in windowLow=windowHigh.
+		windowHigh: initialRound,
 		lastRound:  status.LastRound,
 	}
 
@@ -144,7 +148,7 @@ func (wp *workerPool) advanceWindow() {
 	wp.logger.Infof("updating sliding window windowHigh=%d windowLow=%d numWorkers=%d", wp.windowHigh, wp.windowLow, wp.numWorkers)
 
 	// Make sure the sliding window doesn't go past the chain tip
-	if wp.windowHigh < wp.lastRound {
+	if wp.windowHigh <= wp.lastRound {
 
 		// if the sliding window is smaller than NUM_WORKERS, then advance it
 		if (wp.windowHigh - wp.windowLow) < wp.numWorkers {
