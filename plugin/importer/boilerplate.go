@@ -32,13 +32,12 @@ func init() {
 }
 
 type Config struct {
-	// TODO: your configuration here.
 	NetAddr string `yaml:"netaddr"`
 	Token   string `yaml:"token"`
 	Workers uint64 `yaml:"workers"`
 }
 
-// importerPlugin is the object which implements the importerPlugin plugin interface.
+// importerPlugin is the object which implements the `importers.Importer` interface.
 type importerPlugin struct {
 	log *logrus.Logger
 	cfg Config
@@ -56,19 +55,22 @@ func (it *importerPlugin) Close() error {
 
 func (it *importerPlugin) Init(ctx context.Context, initProvider data.InitProvider, cfg plugins.PluginConfig, logger *logrus.Logger) error {
 
+	log.Infof("Nodely importer - initializing from round %d", initProvider.NextDBRound())
+
 	it.log = logger
+
+	// parse configuration
 	var err error
 	if err = cfg.UnmarshalConfig(&it.cfg); err != nil {
 		return fmt.Errorf("unable to read configuration: %w", err)
 	}
 	logger.Infof("CONFIG netaddr=%s workers=%d", it.cfg.NetAddr, it.cfg.Workers)
+
+	// initialize worker pool
 	it.wp, err = newWorkerPool(ctx, logger, it.cfg.Workers, uint64(initProvider.NextDBRound()))
 	if err != nil {
 		return fmt.Errorf("failed to initialize worker pool: %w", err)
 	}
-
-	// TODO: Your init logic here.
-	log.Info("INIT() CALLED", initProvider.NextDBRound())
 
 	return nil
 }
@@ -79,8 +81,7 @@ func (it *importerPlugin) GetGenesis() (*types.Genesis, error) {
 
 func (it *importerPlugin) GetBlock(rnd uint64) (data.BlockData, error) {
 
-	// TODO: Your receive block data logic here.
-	log.Info("GETBLOCK() CALLED", rnd)
+	log.Infof("Nodely importer - GetBlock(%d)", rnd)
 
 	r := it.wp.getItem(rnd)
 
