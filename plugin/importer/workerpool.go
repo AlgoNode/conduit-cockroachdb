@@ -98,10 +98,11 @@ func (wp *workerPool) close() {
 
 func (wp *workerPool) getItem(rnd uint64) types.Round {
 
+	// abort if conduit requests rounds out of order
 	{
 		wp.mutex.Lock()
 		if rnd != uint64(wp.windowLow) {
-			wp.logger.Error("rnd != wp.windowLow", rnd, wp.windowLow)
+			wp.logger.Errorf("rnd != wp.windowLow (%d != %d)", rnd, wp.windowLow)
 			panic("")
 		}
 		wp.mutex.Unlock()
@@ -111,12 +112,12 @@ func (wp *workerPool) getItem(rnd uint64) types.Round {
 		// check if we already have the round
 		{
 			wp.mutex.Lock()
-			wp.logger.Info("checking condition", wp.rounds.values)
+			wp.logger.Infof("checking whether round %d is already downloaded: %d", rnd, wp.rounds.values)
 			if wp.rounds.Len() != 0 && wp.rounds.Min() == uint64(wp.windowLow) {
 
 				// take out the item
 				tmp := wp.rounds.PopMin()
-				wp.logger.Info("returning item ", tmp, wp.rounds.values)
+				wp.logger.Infof("returning round %d (%d)", tmp, wp.rounds.values)
 
 				// update the sliding window size
 				wp.windowLow++
@@ -126,8 +127,6 @@ func (wp *workerPool) getItem(rnd uint64) types.Round {
 
 				wp.mutex.Unlock()
 				return types.Round(tmp)
-			} else if wp.rounds.Len() != 0 {
-				wp.logger.Info("item was not tip: ", wp.rounds.Min(), wp.rounds.values)
 			}
 			wp.mutex.Unlock()
 		}
@@ -213,7 +212,7 @@ func tipFollowerEntrypoint(
 				logger.Info("tip follower leaving: context cancelled")
 				return
 			}
-			logger.Error("failed to get status from algod: ", err)
+			logger.Errorf("failed to get status from algod: %s", err)
 			time.Sleep(5 * time.Second)
 			continue
 		}
@@ -224,6 +223,6 @@ func tipFollowerEntrypoint(
 			wp.lastRound = status.LastRound
 			wp.mutex.Unlock()
 		}
-		logger.Info("current round is ", status.LastRound)
+		logger.Infof("lastRound is %d", status.LastRound)
 	}
 }
