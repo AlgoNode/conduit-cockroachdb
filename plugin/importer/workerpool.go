@@ -58,6 +58,7 @@ func newWorkerPool(
 		cancelFunc()
 		return nil, fmt.Errorf("failed to query current round: %w", err)
 	}
+	logger.Infof("the last known round is %d", status.LastRound)
 
 	jobsCh := make(chan types.Round, numWorkers)
 	roundsCh := make(chan types.Round, numWorkers)
@@ -116,12 +117,12 @@ func (wp *workerPool) getItem(rnd uint64) types.Round {
 		// check if we already have the round
 		{
 			wp.mutex.Lock()
-			wp.logger.Infof("checking whether round %d is already downloaded: %d", rnd, wp.rounds.values)
+			//wp.logger.Infof("checking whether round %d is already downloaded: %d", rnd, wp.rounds.values)
 			if wp.rounds.Len() != 0 && wp.rounds.Min() == uint64(wp.windowLow) {
 
 				// take out the item
 				tmp := wp.rounds.PopMin()
-				wp.logger.Infof("returning round %d (%d)", tmp, wp.rounds.values)
+				//wp.logger.Infof("returning round %d (%d)", tmp, wp.rounds.values)
 
 				// update the sliding window size
 				wp.windowLow++
@@ -145,25 +146,26 @@ func (wp *workerPool) getItem(rnd uint64) types.Round {
 
 func (wp *workerPool) advanceWindow() {
 
-	wp.logger.Infof("updating sliding window windowHigh=%d windowLow=%d numWorkers=%d", wp.windowHigh, wp.windowLow, wp.numWorkers)
+	wp.logger.Infof("checking whether to advance the sliding window windowLow=%d windowHigh=%d windowSize=%d lastRound=%d numWorkers=%d",
+		wp.windowLow, wp.windowHigh, wp.windowHigh-wp.windowLow, wp.lastRound, wp.numWorkers)
 
-	// Make sure the sliding window doesn't go past the chain tip
-	if wp.windowHigh <= wp.lastRound {
+	num_jobs := 0
+	for {
+		if (wp.windowHigh <= wp.lastRound) && // Make sure the sliding window doesn't go past the chain tip
+			(wp.windowHigh-wp.windowLow) < wp.numWorkers { // If the sliding window is smaller than NUM_WORKERS, we can advance it
 
-		// if the sliding window is smaller than NUM_WORKERS, then advance it
-		if (wp.windowHigh - wp.windowLow) < wp.numWorkers {
-
-			steps := wp.numWorkers - (wp.windowHigh - wp.windowLow)
-			wp.logger.Infof("creating %d jobs", steps)
-
-			for i := uint64(0); i < steps; i++ {
-				wp.jobsCh <- types.Round(wp.windowHigh)
-				wp.windowHigh++
-			}
+			wp.jobsCh <- types.Round(wp.windowHigh)
+			wp.windowHigh++
+			num_jobs++
+		} else {
+			break
 		}
-
 	}
 
+	if num_jobs > 0 {
+		wp.logger.Infof("created %d jobs (windowLow=%d windowHigh=%d lastRound=%d)",
+			num_jobs, wp.windowLow, wp.windowHigh, wp.lastRound)
+	}
 }
 
 func workerEntrypoint(
@@ -178,7 +180,7 @@ func workerEntrypoint(
 		round := <-jobsCh
 
 		// TODO Fetch the block from the network
-		time.Sleep(time.Duration(rand.IntN(5)) * time.Second)
+		time.Sleep(time.Duration(rand.IntN(3)) * time.Second)
 
 		roundsCh <- round
 	}
