@@ -60,10 +60,14 @@ func (it *importerTemplate) Close() error {
 
 func (it *importerTemplate) Init(ctx context.Context, initProvider data.InitProvider, cfg plugins.PluginConfig, logger *logrus.Logger) error {
 	it.log = logger
-	if err := cfg.UnmarshalConfig(&it.cfg); err != nil {
+	var err error
+	if err = cfg.UnmarshalConfig(&it.cfg); err != nil {
 		return fmt.Errorf("unable to read configuration: %w", err)
 	}
-	it.wp = newWorkerPool(ctx, logger, 3, initProvider.NextDBRound()) //FIXME hardcoded value
+	it.wp, err = newWorkerPool(ctx, logger, 3, initProvider.NextDBRound()) //FIXME hardcoded value
+	if err != nil {
+		return fmt.Errorf("failed to initialize worker pool: %w", err)
+	}
 
 	// TODO: Your init logic here.
 	log.Info("INIT() CALLED", initProvider.NextDBRound())
@@ -78,7 +82,7 @@ func (it *importerTemplate) GetGenesis() (*types.Genesis, error) {
 func (it *importerTemplate) GetBlock(rnd uint64) (data.BlockData, error) {
 
 	// TODO: Your receive block data logic here.
-	//log.Info("GETBLOCK() CALLED", rnd)
+	log.Info("GETBLOCK() CALLED", rnd)
 
 	r := it.wp.getItem(rnd)
 

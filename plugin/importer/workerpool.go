@@ -3,6 +3,7 @@ package importer
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/rand/v2"
 	"time"
 
@@ -36,14 +37,14 @@ func newWorkerPool(
 	logger *logrus.Logger,
 	numWorkers uint,
 	initialRound types.Round,
-) *workerPool {
+) (*workerPool, error) {
 
 	ctx, cancelFunc := context.WithCancel(parentCtx)
 
 	client, err := algod.MakeClient("https://mainnet-api.algonode.cloud", "")
 	if err != nil {
 		logger.Error("failed to initialize algod client: ", err)
-		panic("") //TODO return an error here
+		return nil, fmt.Errorf("failed to initialize algod: %w", err)
 	}
 
 	jobsCh := make(chan types.Round, numWorkers)
@@ -74,7 +75,7 @@ func newWorkerPool(
 		windowHigh: initialRound + types.Round(numWorkers),
 		numWorkers: numWorkers,
 	}
-	return &wp
+	return &wp, nil
 }
 
 func (wp *workerPool) close() {
