@@ -44,6 +44,7 @@ func newWorkerPool(
 	client, err := algod.MakeClient("https://mainnet-api.algonode.cloud", "")
 	if err != nil {
 		logger.Error("failed to initialize algod client: ", err)
+		cancelFunc()
 		return nil, fmt.Errorf("failed to initialize algod: %w", err)
 	}
 
