@@ -20,9 +20,9 @@ type workerPool struct {
 
 	client *algod.Client
 
-	jobsCh chan types.Round
+	jobsCh chan<- types.Round
 
-	roundsCh chan types.Round
+	roundsCh <-chan types.Round
 	rounds   sortedList
 
 	windowLow  types.Round
@@ -136,8 +136,8 @@ func workerEntrypoint(
 	_ context.Context,
 	logger *logrus.Logger,
 	client *algod.Client,
-	jobsCh chan types.Round,
-	itemsCh chan types.Round,
+	jobsCh <-chan types.Round,
+	roundsCh chan<- types.Round,
 ) {
 
 	for {
@@ -146,7 +146,7 @@ func workerEntrypoint(
 		// TODO Fetch the block from the network
 		time.Sleep(time.Duration(rand.IntN(5)) * time.Second)
 
-		itemsCh <- round
+		roundsCh <- round
 	}
 }
 
