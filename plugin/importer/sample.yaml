@@ -1,9 +1,0 @@
-name: ndlycloud
-config:
-
-    # Algod API address.
-    netaddr: "http://your-algod-url:port"
-
-    # Algod API token. Found in the algod.token file.
-    token: "contents of your algod.token file"
-
