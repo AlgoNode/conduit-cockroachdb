@@ -1,0 +1,11 @@
+name: ndlycloud
+config:
+
+    # Algod API address.
+    netaddr: "http://mainnet-api.algonode.network"
+
+    # Algod API token. Found in the algod.token file.
+    token: ""
+
+    # Number of workers performing concurrent downloads.
+    workers: 8
