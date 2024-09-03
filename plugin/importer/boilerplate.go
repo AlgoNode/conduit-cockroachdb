@@ -55,6 +55,7 @@ func (it *importerTemplate) Config() string {
 }
 
 func (it *importerTemplate) Close() error {
+	it.wp.close()
 	return nil
 }
 
