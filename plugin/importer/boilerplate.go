@@ -28,7 +28,7 @@ var metadata = plugins.Metadata{
 
 func init() {
 	importers.Register(metadata.Name, importers.ImporterConstructorFunc(func() importers.Importer {
-		return &importerTemplate{}
+		return &importerPlugin{}
 	}))
 }
 
@@ -38,28 +38,28 @@ type Config struct {
 	ConfigInt    int    `yaml:"config_int"`
 }
 
-// importerTemplate is the object which implements the importer plugin interface.
-type importerTemplate struct {
+// importerPlugin is the object which implements the importerPlugin plugin interface.
+type importerPlugin struct {
 	log *logrus.Logger
 	cfg Config
 	wp  *workerPool
 }
 
-func (it *importerTemplate) Metadata() plugins.Metadata {
+func (it *importerPlugin) Metadata() plugins.Metadata {
 	return metadata
 }
 
-func (it *importerTemplate) Config() string {
+func (it *importerPlugin) Config() string {
 	ret, _ := yaml.Marshal(it.cfg)
 	return string(ret)
 }
 
-func (it *importerTemplate) Close() error {
+func (it *importerPlugin) Close() error {
 	it.wp.close()
 	return nil
 }
 
-func (it *importerTemplate) Init(ctx context.Context, initProvider data.InitProvider, cfg plugins.PluginConfig, logger *logrus.Logger) error {
+func (it *importerPlugin) Init(ctx context.Context, initProvider data.InitProvider, cfg plugins.PluginConfig, logger *logrus.Logger) error {
 	it.log = logger
 	var err error
 	if err = cfg.UnmarshalConfig(&it.cfg); err != nil {
@@ -76,11 +76,11 @@ func (it *importerTemplate) Init(ctx context.Context, initProvider data.InitProv
 	return nil
 }
 
-func (it *importerTemplate) GetGenesis() (*types.Genesis, error) {
+func (it *importerPlugin) GetGenesis() (*types.Genesis, error) {
 	return &types.Genesis{}, nil
 }
 
-func (it *importerTemplate) GetBlock(rnd uint64) (data.BlockData, error) {
+func (it *importerPlugin) GetBlock(rnd uint64) (data.BlockData, error) {
 
 	// TODO: Your receive block data logic here.
 	log.Info("GETBLOCK() CALLED", rnd)
