@@ -4,14 +4,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/rand/v2"
 	"sync"
 	"time"
 
+	"github.com/algorand/conduit/conduit/data"
 	"github.com/algorand/go-algorand-sdk/client/v2/algod"
+	"github.com/algorand/go-algorand-sdk/client/v2/common"
+	"github.com/algorand/go-algorand-sdk/encoding/msgpack"
+	"github.com/algorand/go-algorand-sdk/v2/client/v2/common/models"
 	"github.com/algorand/go-algorand-sdk/v2/types"
 	"github.com/sirupsen/logrus"
 )
+
+const AlgodRetryTimeout = 5 * time.Second
 
 type workerPool struct {
 	ctx        context.Context
@@ -23,7 +28,7 @@ type workerPool struct {
 
 	jobsCh chan<- types.Round
 
-	roundsCh <-chan types.Round
+	roundsCh <-chan *data.BlockData
 	rounds   sortedList
 
 	numWorkers uint64
@@ -61,7 +66,7 @@ func newWorkerPool(
 	logger.Infof("the last known round is %d", status.LastRound)
 
 	jobsCh := make(chan types.Round, numWorkers)
-	roundsCh := make(chan types.Round, numWorkers)
+	roundsCh := make(chan *data.BlockData, numWorkers)
 
 	// spawn workers
 	for i := uint64(0); i < numWorkers; i++ {
@@ -96,7 +101,7 @@ func (wp *workerPool) close() {
 	wp.cancelFunc()
 }
 
-func (wp *workerPool) getItem(rnd uint64) types.Round {
+func (wp *workerPool) getItem(rnd uint64) *data.BlockData {
 
 	// abort if conduit requests rounds out of order
 	{
@@ -126,14 +131,14 @@ func (wp *workerPool) getItem(rnd uint64) types.Round {
 				wp.advanceWindow()
 
 				wp.mutex.Unlock()
-				return types.Round(tmp)
+				return tmp
 			}
 			wp.mutex.Unlock()
 		}
 
 		// wait for more data
 		item := <-wp.roundsCh
-		wp.rounds.Push(uint64(item))
+		wp.rounds.Push(item)
 	}
 
 }
@@ -163,20 +168,78 @@ func (wp *workerPool) advanceWindow() {
 }
 
 func workerEntrypoint(
-	_ context.Context,
+	ctx context.Context,
 	logger *logrus.Logger,
 	client *algod.Client,
 	jobsCh <-chan types.Round,
-	roundsCh chan<- types.Round,
+	roundsCh chan<- *data.BlockData,
 ) {
 
 	for {
 		round := <-jobsCh
 
-		// TODO Fetch the block from the network
-		time.Sleep(time.Duration(rand.IntN(3)) * time.Second)
+		// Fetch the block and delta from the network
+		var wg sync.WaitGroup
 
-		roundsCh <- round
+		// fetch the block concurrently
+		var block models.BlockResponse
+		wg.Add(1)
+		go func() {
+
+			for {
+				blockbytes, err := client.BlockRaw(uint64(round)).Do(ctx)
+				if err != nil {
+					logger.Warnf("error calling /v2/blocks/%d: %w", round, err)
+					time.Sleep(AlgodRetryTimeout)
+					continue
+				}
+
+				err = msgpack.Decode(blockbytes, &block)
+				if err != nil {
+					logger.Warnf("failed to decode algod block response for round %d: %v", round, err)
+					time.Sleep(AlgodRetryTimeout)
+					continue
+				}
+
+				break
+			}
+
+			wg.Done()
+		}()
+
+		// fetch the delta concurrently
+		var delta types.LedgerStateDelta
+		wg.Add(1)
+		go func() {
+
+			params := struct {
+				Format string `url:"format,omitempty"`
+			}{Format: "msgp"}
+
+			for {
+				// Note: this uses lenient decoding. GetRaw and msgpack.Decode would allow strict decoding.
+				err := (*common.Client)(client).GetRawMsgpack(ctx, &delta, fmt.Sprintf("/v2/deltas/%d", round), params, nil)
+				if err != nil {
+					logger.Warnf("failed to get /v2/deltas/%d: %v", round, err)
+					time.Sleep(AlgodRetryTimeout)
+					continue
+				}
+				break
+			}
+
+			wg.Done()
+		}()
+
+		// wait for goroutines to finish, then collect the data
+		wg.Wait()
+		blk := data.BlockData{
+			BlockHeader: block.Block.BlockHeader,
+			Payset:      block.Block.Payset,
+			Certificate: block.Cert,
+			Delta:       &delta,
+		}
+
+		roundsCh <- &blk
 	}
 }
 

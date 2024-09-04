@@ -83,13 +83,6 @@ func (it *importerPlugin) GetBlock(rnd uint64) (data.BlockData, error) {
 
 	log.Infof("Nodely importer - GetBlock(%d)", rnd)
 
-	r := it.wp.getItem(rnd)
-
-	data := data.BlockData{
-		BlockHeader: types.BlockHeader{Round: r},
-		Delta:       nil,
-		Payset:      nil,
-		Certificate: nil,
-	}
-	return data, nil
+	blk := it.wp.getItem(rnd)
+	return *blk, nil
 }
