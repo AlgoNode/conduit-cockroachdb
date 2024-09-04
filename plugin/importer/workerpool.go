@@ -63,7 +63,7 @@ func newWorkerPool(
 		cancelFunc()
 		return nil, fmt.Errorf("failed to query current round: %w", err)
 	}
-	logger.Infof("the last known round is %d", status.LastRound)
+	logger.Tracef("the last known round is %d", status.LastRound)
 
 	jobsCh := make(chan types.Round, numWorkers)
 	roundsCh := make(chan *data.BlockData, numWorkers)
@@ -117,12 +117,10 @@ func (wp *workerPool) getItem(rnd uint64) *data.BlockData {
 		// check if we already have the round
 		{
 			wp.mutex.Lock()
-			//wp.logger.Infof("checking whether round %d is already downloaded: %d", rnd, wp.rounds.values)
 			if wp.rounds.Len() != 0 && wp.rounds.Min() == uint64(wp.windowLow) {
 
 				// take out the item
 				tmp := wp.rounds.PopMin()
-				//wp.logger.Infof("returning round %d (%d)", tmp, wp.rounds.values)
 
 				// update the sliding window size
 				wp.windowLow++
@@ -145,7 +143,7 @@ func (wp *workerPool) getItem(rnd uint64) *data.BlockData {
 
 func (wp *workerPool) advanceWindow() {
 
-	wp.logger.Infof("checking whether to advance the sliding window windowLow=%d windowHigh=%d windowSize=%d lastRound=%d numWorkers=%d",
+	wp.logger.Tracef("checking whether to advance the sliding window windowLow=%d windowHigh=%d windowSize=%d lastRound=%d numWorkers=%d",
 		wp.windowLow, wp.windowHigh, wp.windowHigh-wp.windowLow, wp.lastRound, wp.numWorkers)
 
 	num_jobs := 0
@@ -162,7 +160,7 @@ func (wp *workerPool) advanceWindow() {
 	}
 
 	if num_jobs > 0 {
-		wp.logger.Infof("created %d jobs (windowLow=%d windowHigh=%d lastRound=%d)",
+		wp.logger.Tracef("created %d jobs (windowLow=%d windowHigh=%d lastRound=%d)",
 			num_jobs, wp.windowLow, wp.windowHigh, wp.lastRound)
 	}
 }
@@ -189,7 +187,7 @@ func workerEntrypoint(
 			for {
 				blockbytes, err := client.BlockRaw(uint64(round)).Do(ctx)
 				if err != nil {
-					logger.Warnf("error calling /v2/blocks/%d: %w", round, err)
+					logger.Warnf("error calling /v2/blocks/%d: %v", round, err)
 					time.Sleep(AlgodRetryTimeout)
 					continue
 				}
@@ -270,11 +268,11 @@ func tipFollowerEntrypoint(
 		status, err := client.StatusAfterBlock(lastRound).Do(ctx)
 		if err != nil {
 			if errors.Is(err, context.Canceled) {
-				logger.Info("tip follower leaving: context cancelled")
+				logger.Trace("tip follower leaving: context cancelled")
 				return
 			}
 			logger.Errorf("failed to get status from algod: %s", err)
-			time.Sleep(5 * time.Second)
+			time.Sleep(AlgodRetryTimeout)
 			continue
 		}
 
@@ -284,6 +282,6 @@ func tipFollowerEntrypoint(
 			wp.lastRound = status.LastRound
 			wp.mutex.Unlock()
 		}
-		logger.Infof("lastRound is %d", status.LastRound)
+		logger.Tracef("lastRound is %d", status.LastRound)
 	}
 }
