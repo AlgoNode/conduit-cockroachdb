@@ -146,22 +146,15 @@ func (wp *workerPool) advanceWindow() {
 	wp.logger.Tracef("checking whether to advance the sliding window windowLow=%d windowHigh=%d windowSize=%d lastRound=%d numWorkers=%d",
 		wp.windowLow, wp.windowHigh, wp.windowHigh-wp.windowLow, wp.lastRound, wp.numWorkers)
 
-	num_jobs := 0
 	for {
 		if (wp.windowHigh <= wp.lastRound) && // Make sure the sliding window doesn't go past the chain tip
 			(wp.windowHigh-wp.windowLow) < wp.numWorkers { // If the sliding window is smaller than NUM_WORKERS, we can advance it
 
 			wp.jobsCh <- types.Round(wp.windowHigh)
 			wp.windowHigh++
-			num_jobs++
 		} else {
 			break
 		}
-	}
-
-	if num_jobs > 0 {
-		wp.logger.Tracef("created %d jobs (windowLow=%d windowHigh=%d lastRound=%d)",
-			num_jobs, wp.windowLow, wp.windowHigh, wp.lastRound)
 	}
 }
 
