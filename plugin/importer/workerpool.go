@@ -256,30 +256,36 @@ func tipFollowerEntrypoint(
 
 		// query the blockchain's last known round
 		var lastRound uint64
+		var should_query_last_round bool
 		{
 			wp.mutex.Lock()
 			lastRound = wp.lastRound
+			// if the sliding window is far away from the blockchain head,
+			// we don't need to query the last known round
+			should_query_last_round = wp.windowHigh+(wp.numWorkers*10) > wp.lastRound
 			wp.mutex.Unlock()
 		}
 
-		// Wait for the next round
-		status, err := client.StatusAfterBlock(lastRound).Do(ctx)
-		if err != nil {
-			if errors.Is(err, context.Canceled) {
-				logger.Trace("tip follower leaving: context cancelled")
-				return
+		if should_query_last_round {
+			// get the last known round from Algod
+			status, err := client.StatusAfterBlock(lastRound).Do(ctx)
+			if err != nil {
+				if errors.Is(err, context.Canceled) {
+					logger.Trace("tip follower leaving: context cancelled")
+					return
+				}
+				logger.Errorf("failed to get status from algod: %s", err)
+				time.Sleep(AlgodRetryTimeout)
+				continue
 			}
-			logger.Errorf("failed to get status from algod: %s", err)
-			time.Sleep(AlgodRetryTimeout)
-			continue
-		}
 
-		// set the blockchain's last known round
-		{
-			wp.mutex.Lock()
-			wp.lastRound = status.LastRound
-			wp.mutex.Unlock()
+			// set the last known round in shared state
+			{
+				wp.mutex.Lock()
+				wp.lastRound = status.LastRound
+				wp.mutex.Unlock()
+			}
+			logger.Tracef("lastRound is %d", status.LastRound)
 		}
-		logger.Tracef("lastRound is %d", status.LastRound)
 	}
 }
