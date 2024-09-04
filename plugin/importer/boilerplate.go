@@ -7,6 +7,7 @@ import (
 
 	"github.com/algorand/go-algorand-sdk/v2/types"
 	"github.com/labstack/gommon/log"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 
 	"github.com/algorand/conduit/conduit/data"
@@ -85,4 +86,11 @@ func (it *importerPlugin) GetBlock(rnd uint64) (data.BlockData, error) {
 
 	blk := it.wp.getItem(rnd)
 	return *blk, nil
+}
+
+func (algodImp *importerPlugin) ProvideMetrics(subsystem string) []prometheus.Collector {
+	getAlgodRawBlockTimeSeconds = initGetAlgodRawBlockTimeSeconds(subsystem)
+	return []prometheus.Collector{
+		getAlgodRawBlockTimeSeconds,
+	}
 }

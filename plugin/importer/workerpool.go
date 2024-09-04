@@ -183,15 +183,18 @@ func workerEntrypoint(
 		var block models.BlockResponse
 		wg.Add(1)
 		go func() {
-
 			for {
+				// download the block
+				start := time.Now()
 				blockbytes, err := client.BlockRaw(uint64(round)).Do(ctx)
 				if err != nil {
 					logger.Warnf("error calling /v2/blocks/%d: %v", round, err)
 					time.Sleep(AlgodRetryTimeout)
 					continue
 				}
+				dt := time.Since(start)
 
+				// decode the block msgpack
 				err = msgpack.Decode(blockbytes, &block)
 				if err != nil {
 					logger.Warnf("failed to decode algod block response for round %d: %v", round, err)
@@ -199,6 +202,8 @@ func workerEntrypoint(
 					continue
 				}
 
+				// update metrics
+				getAlgodRawBlockTimeSeconds.Observe(dt.Seconds())
 				break
 			}
 
