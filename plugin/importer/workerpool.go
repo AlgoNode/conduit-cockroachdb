@@ -254,20 +254,20 @@ func tipFollowerEntrypoint(
 			wp.mutex.Unlock()
 		}
 
-		// query the blockchain's last known round
+		// get the blockchain's last known round
 		var lastRound uint64
-		var should_query_last_round bool
+		var should_update_last_round bool
 		{
 			wp.mutex.Lock()
 			lastRound = wp.lastRound
 			// if the sliding window is far away from the blockchain head,
-			// we don't need to query the last known round
-			should_query_last_round = wp.windowHigh+(wp.numWorkers*10) > wp.lastRound
+			// we don't need to update the last known round
+			should_update_last_round = wp.windowHigh+(wp.numWorkers*10) > wp.lastRound
 			wp.mutex.Unlock()
 		}
 
-		if should_query_last_round {
-			// get the last known round from Algod
+		// get the last known round from Algod?
+		if should_update_last_round {
 			status, err := client.StatusAfterBlock(lastRound).Do(ctx)
 			if err != nil {
 				if errors.Is(err, context.Canceled) {
@@ -286,6 +286,9 @@ func tipFollowerEntrypoint(
 				wp.mutex.Unlock()
 			}
 			logger.Tracef("lastRound is %d", status.LastRound)
+		} else {
+			// avoid needless spinning
+			time.Sleep(5 * time.Second)
 		}
 	}
 }
