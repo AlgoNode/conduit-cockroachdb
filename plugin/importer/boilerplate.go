@@ -80,7 +80,7 @@ func (it *importerPlugin) Init(ctx context.Context, initProvider data.InitProvid
 	logger.Infof("CONFIG netaddr=%s workers=%d", it.cfg.NetAddr, it.cfg.Workers)
 
 	// initialize the algod v2 client
-	it.client, err = algod.MakeClient("https://mainnet-api.algonode.cloud", "")
+	it.client, err = algod.MakeClient(it.cfg.NetAddr, it.cfg.Token)
 	if err != nil {
 		return fmt.Errorf("failed to initialize algod client: %w", err)
 	}
