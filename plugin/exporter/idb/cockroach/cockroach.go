@@ -56,7 +56,7 @@ func Init(connection string, opts idb.IndexerDbOptions, log *log.Logger) (*Index
 	conn, err := pgxpool.ConnectConfig(context.Background(), postgresConfig)
 	//defer conn.Close(context.Background())
 	if err != nil {
-		log.Fatal("failed to connect database", err)
+		return nil, nil, err
 	}
 
 	idb := &IndexerDb{
