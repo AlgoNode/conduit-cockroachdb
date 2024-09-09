@@ -14,7 +14,7 @@ This plugin imports block and delta data from Nodely instant sync cloud follower
 importer:
     name: ndlycloud
     config:
-        netaddr: "http://mainnet-api.algonode.network"
+        netaddr: "https://mainnet-api.algonode.cloud"
         token: ""
         workers: 8
 ```

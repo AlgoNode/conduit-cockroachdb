@@ -2,7 +2,7 @@ name: ndlycloud
 config:
 
     # Algod API address.
-    netaddr: "http://mainnet-api.algonode.network"
+    netaddr: "https://mainnet-api.algonode.cloud"
 
     # Algod API token. Found in the algod.token file.
     token: ""
