@@ -18,6 +18,8 @@ import (
 	"github.com/algorand/conduit/conduit/plugins/importers"
 )
 
+const defaultNumWorkers = 8
+
 //go:embed sample.yaml
 var sampleConfig string
 
@@ -71,6 +73,10 @@ func (it *importerPlugin) Init(ctx context.Context, initProvider data.InitProvid
 	if err = cfg.UnmarshalConfig(&it.cfg); err != nil {
 		return fmt.Errorf("unable to read configuration: %w", err)
 	}
+	if it.cfg.Workers < 1 {
+		it.cfg.Workers = defaultNumWorkers
+		logger.Infof("setting number of workers to a default value of %d", it.cfg.Workers)
+	}
 	logger.Infof("CONFIG netaddr=%s workers=%d", it.cfg.NetAddr, it.cfg.Workers)
 
 	// initialize the algod v2 client
@@ -103,7 +109,7 @@ func (it *importerPlugin) GetGenesis() (*types.Genesis, error) {
 		return nil, err
 	}
 	if reflect.DeepEqual(genesis, types.Genesis{}) {
-		return nil, fmt.Errorf("unable to fetch genesis file from API")
+		return nil, fmt.Errorf("unable to fetch genesis file from Algod v2 API at %s", it.cfg.NetAddr)
 	}
 	return &genesis, nil
 }
