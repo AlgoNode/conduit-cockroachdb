@@ -17,6 +17,20 @@ jobs:
       contents: read
       id-token: write
     steps:
+      - name: Set up SSH@build-amd
+        uses: MrSquaare/ssh-setup-action@2d028b70b5e397cf8314c6eaea229a6c3e34977a # v3.1.0
+        with:
+          host: 5.75.226.76
+          private-key: ${{ secrets.BUILDX_DE1 }}
+          private-key-name: build-amd
+
+      - name: Set up SSH@build-arm
+        uses: MrSquaare/ssh-setup-action@2d028b70b5e397cf8314c6eaea229a6c3e34977a # v3.1.0
+        with:
+          host: 188.245.112.244
+          private-key: ${{ secrets.BUILDX_DE1 }}
+          private-key-name: build-arm
+  
       - name: Check out the repo
         uses: actions/checkout@v4
 
@@ -40,7 +54,10 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
+          endpoint: ssh://root@5.75.226.76
+          append: |
+            - endpoint: ssh://root@188.245.112.244
           push: ${{ github.event_name != 'pull_request' }}
           tags: ghcr.io/algonode/conduit-cockroachdb:latest
           labels: ${{ steps.meta.outputs.labels }}
