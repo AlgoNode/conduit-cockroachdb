@@ -30,6 +30,13 @@ jobs:
           host: 188.245.112.244
           private-key: ${{ secrets.BUILDX_DE1 }}
           private-key-name: build-arm
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          endpoint: ssh://root@5.75.226.76
+          append: |
+            - endpoint: ssh://root@188.245.112.244
   
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -55,9 +62,6 @@ jobs:
           context: .
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
-          endpoint: ssh://root@5.75.226.76
-          append: |
-            - endpoint: ssh://root@188.245.112.244
           push: ${{ github.event_name != 'pull_request' }}
           tags: ghcr.io/algonode/conduit-cockroachdb:latest
           labels: ${{ steps.meta.outputs.labels }}
