@@ -4,7 +4,10 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"reflect"
 
+	"github.com/algorand/go-algorand-sdk/encoding/json"
+	"github.com/algorand/go-algorand-sdk/v2/client/v2/algod"
 	"github.com/algorand/go-algorand-sdk/v2/types"
 	"github.com/labstack/gommon/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -14,6 +17,8 @@ import (
 	"github.com/algorand/conduit/conduit/plugins"
 	"github.com/algorand/conduit/conduit/plugins/importers"
 )
+
+const defaultNumWorkers = 8
 
 //go:embed sample.yaml
 var sampleConfig string
@@ -40,9 +45,11 @@ type Config struct {
 
 // importerPlugin is the object which implements the `importers.Importer` interface.
 type importerPlugin struct {
-	log *logrus.Logger
-	cfg Config
-	wp  *workerPool
+	log    *logrus.Logger
+	cfg    Config
+	wp     *workerPool
+	client *algod.Client
+	ctx    context.Context
 }
 
 func (it *importerPlugin) Metadata() plugins.Metadata {
@@ -59,16 +66,27 @@ func (it *importerPlugin) Init(ctx context.Context, initProvider data.InitProvid
 	log.Infof("Nodely importer - initializing from round %d", initProvider.NextDBRound())
 
 	it.log = logger
+	it.ctx = ctx
 
 	// parse configuration
 	var err error
 	if err = cfg.UnmarshalConfig(&it.cfg); err != nil {
 		return fmt.Errorf("unable to read configuration: %w", err)
 	}
+	if it.cfg.Workers < 1 {
+		it.cfg.Workers = defaultNumWorkers
+		logger.Infof("setting number of workers to a default value of %d", it.cfg.Workers)
+	}
 	logger.Infof("CONFIG netaddr=%s workers=%d", it.cfg.NetAddr, it.cfg.Workers)
 
+	// initialize the algod v2 client
+	it.client, err = algod.MakeClient(it.cfg.NetAddr, it.cfg.Token)
+	if err != nil {
+		return fmt.Errorf("failed to initialize algod client: %w", err)
+	}
+
 	// initialize worker pool
-	it.wp, err = newWorkerPool(ctx, logger, it.cfg.Workers, uint64(initProvider.NextDBRound()))
+	it.wp, err = newWorkerPool(ctx, logger, it.client, it.cfg.Workers, uint64(initProvider.NextDBRound()))
 	if err != nil {
 		return fmt.Errorf("failed to initialize worker pool: %w", err)
 	}
@@ -77,7 +95,23 @@ func (it *importerPlugin) Init(ctx context.Context, initProvider data.InitProvid
 }
 
 func (it *importerPlugin) GetGenesis() (*types.Genesis, error) {
-	return &types.Genesis{}, nil
+
+	genesisResponse, err := it.client.GetGenesis().Do(it.ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	genesis := types.Genesis{}
+
+	// Don't fail on unknown properties here since the go-algorand and SDK genesis types differ slightly
+	err = json.LenientDecode([]byte(genesisResponse), &genesis)
+	if err != nil {
+		return nil, err
+	}
+	if reflect.DeepEqual(genesis, types.Genesis{}) {
+		return nil, fmt.Errorf("unable to fetch genesis file from Algod v2 API at %s", it.cfg.NetAddr)
+	}
+	return &genesis, nil
 }
 
 func (it *importerPlugin) GetBlock(rnd uint64) (data.BlockData, error) {

@@ -44,18 +44,12 @@ type workerPool struct {
 func newWorkerPool(
 	parentCtx context.Context,
 	logger *logrus.Logger,
+	client *algod.Client,
 	numWorkers uint64,
 	initialRound uint64,
 ) (*workerPool, error) {
 
 	ctx, cancelFunc := context.WithCancel(parentCtx)
-
-	// initialize the algod v2 client
-	client, err := algod.MakeClient("https://mainnet-api.algonode.cloud", "")
-	if err != nil {
-		cancelFunc()
-		return nil, fmt.Errorf("failed to initialize algod: %w", err)
-	}
 
 	// query algod for the current round
 	status, err := client.Status().Do(ctx)
