@@ -17,23 +17,8 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - name: Set up SSH
-        uses: MrSquaare/ssh-setup-action@v3
-        with:
-          host: 188.245.42.209
-          private-key: ${{ secrets.BUILDX_DE1 }}
-          private-key-name: buildx_de1
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3        
-        with:
-          platforms: linux/amd64,linux/arm64
-          append: |
-            - endpoint: ssh://ghbuild@188.245.42.209
-              platforms: linux/arm64          
-
       - name: Check out the repo
-        uses: actions/checkout@v4        
+        uses: actions/checkout@v4
 
       - name: Log in to GHCR
         if: github.event_name != 'pull_request'      
@@ -55,7 +40,7 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
-          labels: latest
+          labels: 'latest'
