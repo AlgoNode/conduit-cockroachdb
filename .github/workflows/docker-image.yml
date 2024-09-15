@@ -17,13 +17,20 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
+      - name: Set up SSH
+        uses: MrSquaare/ssh-setup-action@v3
+        with:
+          host: 188.245.42.209
+          private-key: ${{ secrets.BUILDX_DE1 }}
+          private-key-name: buildx_de1
+      
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3        
         with:
           platforms: linux/amd64,linux/arm64
+          append: |
+            - endpoint: ssh://ghbuild@188.245.42.209
+              platforms: linux/arm64          
 
       - name: Check out the repo
         uses: actions/checkout@v4        
@@ -40,7 +47,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/supeer-io/alloanalyticspro
+          images: ghcr.io/algonode/conduit-cockroachdb
 
       - name: Build and push Docker image
         id: push
