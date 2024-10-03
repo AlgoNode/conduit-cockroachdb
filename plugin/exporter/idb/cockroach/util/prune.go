@@ -72,37 +72,40 @@ func (p *cdb) DeleteLoop(wg *sync.WaitGroup, nextRound *uint64) {
 
 	// round value used for interval calculation
 	round := *nextRound
-	for {
-		select {
-		case <-p.ctx.Done():
-			return
-		case <-time.After(p.duration):
-			currentRound := *nextRound
-			// keep, remove data older than keep
-			keep := currentRound - p.config.Rounds
-			if p.config.Interval == once {
-				if currentRound > p.config.Rounds {
-					err := p.db.DeleteTransactions(p.ctx, keep)
-					if err != nil {
-						p.logger.Warnf("DeleteLoop(): data pruning err: %v", err)
-					}
-				}
+	func() {
+		for {
+			select {
+			case <-p.ctx.Done():
 				return
-			} else if p.config.Interval > disabled {
-				// *nextRound should increment as exporter receives new block
-				if currentRound > p.config.Rounds && currentRound-round >= uint64(p.config.Interval) {
-					err := p.db.DeleteTransactions(p.ctx, keep)
-					if err != nil {
-						p.logger.Warnf("DeleteLoop(): data pruning err: %v", err)
-						return
+			case <-time.After(p.duration):
+				currentRound := *nextRound
+				// keep, remove data older than keep
+				keep := currentRound - p.config.Rounds
+				if p.config.Interval == once {
+					if currentRound > p.config.Rounds {
+						err := p.db.DeleteTransactions(p.ctx, keep)
+						if err != nil {
+							p.logger.Warnf("DeleteLoop(): data pruning err: %v", err)
+						}
 					}
-					// update round value for next interval calculation
-					round = currentRound
+					return
+				} else if p.config.Interval > disabled {
+					// *nextRound should increment as exporter receives new block
+					if currentRound > p.config.Rounds && currentRound-round >= uint64(p.config.Interval) {
+						err := p.db.DeleteTransactions(p.ctx, keep)
+						if err != nil {
+							p.logger.Warnf("DeleteLoop(): data pruning err: %v", err)
+						} else {
+							// update round value for next interval calculation
+							round = currentRound
+						}
+					}
+				} else {
+					p.logger.Fatalf("DeleteLoop(): unsupported interval value %v", p.config.Interval)
+					return
 				}
-			} else {
-				p.logger.Fatalf("DeleteLoop(): unsupported interval value %v", p.config.Interval)
-				return
 			}
 		}
-	}
+	}()
+	p.logger.Warn("DeleteLoop(): loop terminated")
 }
