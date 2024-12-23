@@ -1,4 +1,4 @@
-FROM golang:1.21 AS build-env
+FROM golang:1.23 AS build-env
 
 RUN groupadd -g 4160 conduit && useradd -u 4160 -g 4160 conduit
 #RUN git clone https://github.com/AlgoNode/conduit-cockroachdb.git
