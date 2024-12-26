@@ -48,11 +48,6 @@ func (db *dummyIndexerDb) GetSpecialAccounts(ctx context.Context) (types.Special
 	return types.SpecialAddresses{}, nil
 }
 
-// Transactions is part of idb.IndexerDB
-func (db *dummyIndexerDb) Transactions(ctx context.Context, tf idb.TransactionFilter) (<-chan idb.TxnRow, uint64) {
-	return nil, 0
-}
-
 // GetAccounts is part of idb.IndexerDB
 func (db *dummyIndexerDb) GetAccounts(ctx context.Context, opts idb.AccountQueryOptions) (<-chan idb.AccountRow, uint64) {
 	return nil, 0

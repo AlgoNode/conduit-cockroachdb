@@ -110,62 +110,6 @@ type IndexerDb interface {
 	DeleteTransactions(ctx context.Context, keep uint64) error
 }
 
-// TransactionFilter is a parameter object with all the transaction filter options.
-type TransactionFilter struct {
-	// SkipOptimization is used for testing to ensure the parameters are not modified.
-	SkipOptimization bool
-
-	// Address filtering transactions for one Address will
-	// return transactions newest-first proceding into the
-	// past. Paging through such results can be achieved by
-	// setting a MaxRound to get results before.
-	Address []byte
-
-	AddressRole AddressRole // 0=Any, otherwise bitfields as defined in address_role.go
-
-	MinRound   uint64
-	MaxRound   uint64
-	AfterTime  time.Time
-	BeforeTime time.Time
-	TypeEnum   TxnTypeEnum // ["","pay","keyreg","acfg","axfer","afrz"]
-	Txid       string
-	Round      *uint64 // nil for no filter
-	Offset     *uint64 // nil for no filter
-	OffsetLT   *uint64 // nil for no filter
-	OffsetGT   *uint64 // nil for no filter
-	SigType    SigType // ["", "sig", "msig", "lsig"]
-	NotePrefix []byte
-	AlgosGT    *uint64 // implictly filters on "pay" txns for Algos > this. This will be a slightly faster query than EffectiveAmountGT.
-	AlgosLT    *uint64
-	RekeyTo    *bool // nil for no filter
-
-	AssetID       uint64 // filter transactions relevant to an asset
-	AssetAmountGT *uint64
-	AssetAmountLT *uint64
-
-	ApplicationID uint64 // filter transactions relevant to an application
-
-	EffectiveAmountGT *uint64 // Algo: Amount + CloseAmount > x
-	EffectiveAmountLT *uint64 // Algo: Amount + CloseAmount < x
-
-	// pointer to last returned object of previous query
-	NextToken string
-
-	Limit uint64
-
-	// If this flag is set to true, then the query returns inner transactions
-	// instead of converting them to the root transaction.
-	SkipInnerTransactionConversion bool
-
-	// If this flag is set to true, then the query only returns root
-	// transactions and skips matching or returning inner transactions.
-	SkipInnerTransactions bool
-
-	// If this flag is set to true, then the query returns the block excluding
-	// the transactions
-	HeaderOnly bool
-}
-
 // AccountQueryOptions is a parameter object with all of the account filter options.
 type AccountQueryOptions struct {
 	GreaterThanAddress []byte // for paging results
