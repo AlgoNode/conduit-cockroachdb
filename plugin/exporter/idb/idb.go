@@ -2,8 +2,6 @@ package idb
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"strconv"
@@ -41,62 +39,6 @@ type TxnRow struct {
 
 	// Error indicates that there was an internal problem processing the expected transaction.
 	Error error
-}
-
-func countInner(stxn *sdk.SignedTxnWithAD) uint {
-	num := uint(0)
-	for _, itxn := range stxn.ApplyData.EvalDelta.InnerTxns {
-		num++
-		num += countInner(&itxn)
-	}
-	return num
-}
-
-// Next returns what should be an opaque string to be used with the next query to resume where a previous limit left off.
-func (tr TxnRow) Next(ascending bool) (string, error) {
-	var b [12]byte
-	binary.LittleEndian.PutUint64(b[:8], tr.Round)
-
-	intra := uint(tr.Intra)
-	if tr.Extra.RootIntra.Present {
-		// initialize for descending order, the root intra.
-		intra = tr.Extra.RootIntra.Value
-	}
-
-	// when ascending add the count of inner transactions.
-	if ascending {
-		var stxn *sdk.SignedTxnWithAD
-		if tr.RootTxn != nil {
-			stxn = tr.RootTxn
-		} else {
-			stxn = tr.Txn
-		}
-
-		if stxn == nil {
-			return "", fmt.Errorf("Next() was not given transaction")
-		}
-
-		intra += countInner(stxn)
-	}
-
-	binary.LittleEndian.PutUint32(b[8:], uint32(intra))
-	return base64.URLEncoding.EncodeToString(b[:]), nil
-}
-
-// DecodeTxnRowNext unpacks opaque string returned from TxnRow.Next()
-func DecodeTxnRowNext(s string) (uint64 /*round*/, uint32 /*intra*/, error) {
-	b, err := base64.URLEncoding.DecodeString(s)
-	if err != nil {
-		return 0, 0, fmt.Errorf("DecodeTxnRowNext() decode err: %w", err)
-	}
-
-	if len(b) != 12 {
-		return 0, 0, fmt.Errorf("DecodeTxnRowNext() bad next token b: %x", b)
-	}
-
-	round := binary.LittleEndian.Uint64(b[:8])
-	intra := binary.LittleEndian.Uint32(b[8:])
-	return round, intra, nil
 }
 
 // OptionalUint wraps bool and uint. It has a custom marshaller below.
