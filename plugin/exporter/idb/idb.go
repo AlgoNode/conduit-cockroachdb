@@ -110,15 +110,6 @@ type IndexerDb interface {
 	DeleteTransactions(ctx context.Context, keep uint64) error
 }
 
-// GetBlockOptions contains the options when requesting to load a block from the database.
-type GetBlockOptions struct {
-	// setting Transactions to true suggests requesting to receive the transactions themselves from the GetBlock query
-	Transactions bool
-	// if len of the results from buildTransactionQuery is greater than MaxTransactionsLimit, return an error
-	// indicating that the header-only flag should be enabled
-	MaxTransactionsLimit uint64
-}
-
 // TransactionFilter is a parameter object with all the transaction filter options.
 type TransactionFilter struct {
 	// SkipOptimization is used for testing to ensure the parameters are not modified.
