@@ -110,42 +110,6 @@ type IndexerDb interface {
 	DeleteTransactions(ctx context.Context, keep uint64) error
 }
 
-// AccountQueryOptions is a parameter object with all of the account filter options.
-type AccountQueryOptions struct {
-	GreaterThanAddress []byte // for paging results
-	EqualToAddress     []byte // return exactly this one account
-
-	// return any accounts with this auth addr
-	EqualToAuthAddr []byte
-
-	// Filter on accounts with current balance greater than x
-	AlgosGreaterThan *uint64
-	// Filter on accounts with current balance less than x.
-	AlgosLessThan *uint64
-
-	// HasAssetID, AssetGT, and AssetLT are implemented in Go code
-	// after data has returned from Postgres and thus are slightly
-	// less efficient. They will turn on IncludeAssetHoldings.
-	HasAssetID uint64
-	AssetGT    *uint64
-	AssetLT    *uint64
-
-	HasAppID uint64
-
-	IncludeAssetHoldings bool
-	IncludeAssetParams   bool
-	IncludeAppLocalState bool
-	IncludeAppParams     bool
-
-	// MaxResources is the maximum combined number of AppParam, AppLocalState, AssetParam, and AssetHolding objects allowed.
-	MaxResources uint64
-
-	// IncludeDeleted indicated whether to include deleted Assets, Applications, etc within the account.
-	IncludeDeleted bool
-
-	Limit uint64
-}
-
 // AccountRow is metadata relating to one account in a account query.
 type AccountRow struct {
 	Account models.Account

@@ -48,11 +48,6 @@ func (db *dummyIndexerDb) GetSpecialAccounts(ctx context.Context) (types.Special
 	return types.SpecialAddresses{}, nil
 }
 
-// GetAccounts is part of idb.IndexerDB
-func (db *dummyIndexerDb) GetAccounts(ctx context.Context, opts idb.AccountQueryOptions) (<-chan idb.AccountRow, uint64) {
-	return nil, 0
-}
-
 // Assets is part of idb.IndexerDB
 func (db *dummyIndexerDb) Assets(ctx context.Context, filter idb.AssetsQuery) (<-chan idb.AssetRow, uint64) {
 	return nil, 0
