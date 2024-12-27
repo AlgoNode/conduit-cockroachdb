@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	models "github.com/algorand/indexer/v3/api/generated/v2"
 	"github.com/algorand/indexer/v3/types"
 
 	sdk "github.com/algorand/go-algorand-sdk/v2/types"
@@ -108,124 +107,6 @@ type IndexerDb interface {
 	SetNetworkState(genesis sdk.Digest) error
 	Health(ctx context.Context) (status Health, err error)
 	DeleteTransactions(ctx context.Context, keep uint64) error
-}
-
-// AccountRow is metadata relating to one account in a account query.
-type AccountRow struct {
-	Account models.Account
-	Error   error // could be MaxAPIResourcesPerAccountError
-}
-
-// MaxAPIResourcesPerAccountError records the offending address and resource count that exceeded the limit.
-type MaxAPIResourcesPerAccountError struct {
-	Address sdk.Address
-
-	TotalAppLocalStates, TotalAppParams, TotalAssets, TotalAssetParams uint64
-}
-
-func (e MaxAPIResourcesPerAccountError) Error() string {
-	return "Max accounts API results limit exceeded"
-}
-
-// AssetsQuery is a parameter object with all of the asset filter options.
-type AssetsQuery struct {
-	AssetID            uint64
-	AssetIDGreaterThan uint64
-
-	Creator []byte
-
-	// Name is a case insensitive substring comparison of the asset name
-	Name string
-	// Unit is a case insensitive substring comparison of the asset unit
-	Unit string
-	// Query checks for fuzzy match against either asset name or unit name
-	// (assetname ILIKE '%?%' OR unitname ILIKE '%?%')
-	Query string
-
-	// IncludeDeleted indicated whether to include deleted Assets in the results.
-	IncludeDeleted bool
-
-	Limit uint64
-}
-
-// AssetRow is metadata relating to one asset in a asset query.
-type AssetRow struct {
-	AssetID      uint64
-	Creator      []byte
-	Params       sdk.AssetParams
-	Error        error
-	CreatedRound *uint64
-	ClosedRound  *uint64
-	Deleted      *bool
-}
-
-// AssetBalanceQuery is a parameter object with all of the asset balance filter options.
-type AssetBalanceQuery struct {
-	AssetID   uint64
-	AssetIDGT uint64
-	AmountGT  *uint64 // only rows > this
-	AmountLT  *uint64 // only rows < this
-
-	Address []byte
-
-	// IncludeDeleted indicated whether to include deleted AssetHoldingss in the results.
-	IncludeDeleted bool
-
-	Limit uint64 // max rows to return
-
-	// PrevAddress for paging, the last item from the previous
-	// query (items returned in address order)
-	PrevAddress []byte
-}
-
-// AssetBalanceRow is metadata relating to one asset balance in an asset balance query.
-type AssetBalanceRow struct {
-	Address      []byte
-	AssetID      uint64
-	Amount       uint64
-	Frozen       bool
-	Error        error
-	CreatedRound *uint64
-	ClosedRound  *uint64
-	Deleted      *bool
-}
-
-// ApplicationRow is metadata and global state (AppParams) relating to one application in an application query.
-type ApplicationRow struct {
-	Application models.Application
-	Error       error
-}
-
-// ApplicationQuery is a parameter object used for query local and global application state.
-type ApplicationQuery struct {
-	Address                  []byte
-	ApplicationID            uint64
-	ApplicationIDGreaterThan uint64
-	IncludeDeleted           bool
-	Limit                    uint64
-}
-
-// AppLocalStateRow is metadata and local state (AppLocalState) relating to one application in an application query.
-type AppLocalStateRow struct {
-	AppLocalState models.ApplicationLocalState
-	Error         error
-}
-
-// ApplicationBoxQuery is a parameter object used to query application boxes.
-type ApplicationBoxQuery struct {
-	ApplicationID uint64
-	BoxName       []byte
-	OmitValues    bool
-	Limit         uint64
-	PrevFinalBox  []byte
-	// Ascending  *bool - Currently, ORDER BY is hard coded to ASC
-}
-
-// ApplicationBoxRow provides a response wrapping box information.
-type ApplicationBoxRow struct {
-	App   uint64
-	Box   models.Box
-	Error error
 }
 
 // IndexerDbOptions are the options common to all indexer backends.

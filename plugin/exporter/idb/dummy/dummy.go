@@ -48,31 +48,6 @@ func (db *dummyIndexerDb) GetSpecialAccounts(ctx context.Context) (types.Special
 	return types.SpecialAddresses{}, nil
 }
 
-// Assets is part of idb.IndexerDB
-func (db *dummyIndexerDb) Assets(ctx context.Context, filter idb.AssetsQuery) (<-chan idb.AssetRow, uint64) {
-	return nil, 0
-}
-
-// AssetBalances is part of idb.IndexerDB
-func (db *dummyIndexerDb) AssetBalances(ctx context.Context, abq idb.AssetBalanceQuery) (<-chan idb.AssetBalanceRow, uint64) {
-	return nil, 0
-}
-
-// Applications is part of idb.IndexerDB
-func (db *dummyIndexerDb) Applications(ctx context.Context, filter idb.ApplicationQuery) (<-chan idb.ApplicationRow, uint64) {
-	return nil, 0
-}
-
-// AppLocalState is part of idb.IndexerDB
-func (db *dummyIndexerDb) AppLocalState(ctx context.Context, filter idb.ApplicationQuery) (<-chan idb.AppLocalStateRow, uint64) {
-	return nil, 0
-}
-
-// ApplicationBoxes isn't currently implemented
-func (db *dummyIndexerDb) ApplicationBoxes(ctx context.Context, filter idb.ApplicationBoxQuery) (<-chan idb.ApplicationBoxRow, uint64) {
-	panic("not implemented")
-}
-
 // Health is part of idb.IndexerDB
 func (db *dummyIndexerDb) Health(ctx context.Context) (state idb.Health, err error) {
 	return idb.Health{}, nil
