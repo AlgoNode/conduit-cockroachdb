@@ -43,11 +43,6 @@ func (db *dummyIndexerDb) GetNextRoundToLoad() (uint64, error) {
 	return 0, nil
 }
 
-// GetSpecialAccounts is part of idb.IndexerDb
-func (db *dummyIndexerDb) GetSpecialAccounts(ctx context.Context) (types.SpecialAddresses, error) {
-	return types.SpecialAddresses{}, nil
-}
-
 // Health is part of idb.IndexerDB
 func (db *dummyIndexerDb) Health(ctx context.Context) (state idb.Health, err error) {
 	return idb.Health{}, nil
