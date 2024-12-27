@@ -88,9 +88,6 @@ type TxnExtra struct {
 // because initialization has not been completed.
 var ErrorNotInitialized error = errors.New("accounting not initialized")
 
-// ErrorBlockNotFound is used when requesting a block that isn't in the DB.
-var ErrorBlockNotFound = errors.New("block not found")
-
 type IndexerDb interface {
 	// Close all connections to the database. Should be called when IndexerDb is
 	// no longer needed.
@@ -135,12 +132,4 @@ type Health struct {
 // NetworkState encodes network metastate.
 type NetworkState struct {
 	GenesisHash sdk.Digest `codec:"genesis-hash"`
-}
-
-// MaxTransactionsError records the error when transaction counts exceeds MaxTransactionsLimit.
-type MaxTransactionsError struct {
-}
-
-func (e MaxTransactionsError) Error() string {
-	return "number of transactions exceeds MaxTransactionsLimit"
 }
