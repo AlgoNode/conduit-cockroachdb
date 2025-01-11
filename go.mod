@@ -5,7 +5,7 @@ go 1.23
 toolchain go1.23.4
 
 require (
-	github.com/algorand/conduit v1.8.0
+	github.com/algorand/conduit v1.8.1
 	github.com/algorand/go-algorand-sdk/v2 v2.7.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1 // indirect
