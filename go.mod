@@ -32,6 +32,7 @@ require (
 
 require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
+	github.com/algorand/indexer v0.0.0-20230616170702-3979f710eae2
 	github.com/algorand/oapi-codegen v1.12.0-algorand.0 // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect

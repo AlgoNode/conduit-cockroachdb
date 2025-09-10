@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb"
 	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb/cockroach/internal/encoding"
 	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb/cockroach/internal/schema"
 	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb/cockroach/internal/types"
@@ -18,14 +17,15 @@ import (
 	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb/cockroach/internal/writer"
 	"github.com/algorand/go-algorand-sdk/v2/protocol"
 	"github.com/algorand/go-algorand-sdk/v2/protocol/config"
+	"github.com/algorand/indexer/idb"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	log "github.com/sirupsen/logrus"
 
+	itypes "github.com/algorand/indexer/types"
 	"github.com/algorand/indexer/v3/idb/migration"
-	itypes "github.com/algorand/indexer/v3/types"
 
 	sdk "github.com/algorand/go-algorand-sdk/v2/types"
 )
@@ -515,4 +515,52 @@ func (db *IndexerDb) DeleteTransactions(ctx context.Context, keep uint64) error 
 		return fmt.Errorf("DeleteTransactions err: %w", err)
 	}
 	return nil
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (db *IndexerDb) GetSpecialAccounts(ctx context.Context) (itypes.SpecialAddresses, error) {
+	panic(msgMethodNotImplemented("GetSpecialAccounts"))
+}
+
+func (db *IndexerDb) GetBlock(ctx context.Context, round uint64, options idb.GetBlockOptions) (sdk.BlockHeader, []idb.TxnRow, error) {
+	panic(msgMethodNotImplemented("GetBlock"))
+}
+
+/*
+// The next multiple functions return a channel with results as well as the latest round
+// accounted.
+BlockHeaders(ctx context.Context, bf BlockHeaderFilter) (<-chan BlockRow, uint64)
+*/
+
+func (db *IndexerDb) Transactions(ctx context.Context, tf idb.TransactionFilter) (<-chan idb.TxnRow, uint64) {
+	panic(msgMethodNotImplemented("Transactions"))
+}
+
+func (db *IndexerDb) GetAccounts(ctx context.Context, opts idb.AccountQueryOptions) (<-chan idb.AccountRow, uint64) {
+	panic(msgMethodNotImplemented("GetAccounts"))
+}
+
+func (db *IndexerDb) Assets(ctx context.Context, filter idb.AssetsQuery) (<-chan idb.AssetRow, uint64) {
+	panic(msgMethodNotImplemented("Assets"))
+}
+
+func (db *IndexerDb) AssetBalances(ctx context.Context, abq idb.AssetBalanceQuery) (<-chan idb.AssetBalanceRow, uint64) {
+	panic(msgMethodNotImplemented("AssetBalances"))
+}
+
+func (db *IndexerDb) Applications(ctx context.Context, filter idb.ApplicationQuery) (<-chan idb.ApplicationRow, uint64) {
+	panic(msgMethodNotImplemented("Applications"))
+}
+
+func (db *IndexerDb) AppLocalState(ctx context.Context, filter idb.ApplicationQuery) (<-chan idb.AppLocalStateRow, uint64) {
+	panic(msgMethodNotImplemented("AppLocalState"))
+}
+
+func (db *IndexerDb) ApplicationBoxes(ctx context.Context, filter idb.ApplicationBoxQuery) (<-chan idb.ApplicationBoxRow, uint64) {
+	panic(msgMethodNotImplemented("ApplicationBoxes"))
+}
+
+func msgMethodNotImplemented(methodName string) string {
+	return fmt.Sprintf("IndexerDb.%s: method not supposed to be called by CRDB exporter plugin", methodName)
 }
