@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb"
+	"github.com/algorand/indexer/v3/idb"
 	"github.com/sirupsen/logrus"
 )
 

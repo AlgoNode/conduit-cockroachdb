@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb"
+	"github.com/algorand/indexer/v3/idb"
 )
 
 func isSerializationError(err error) bool {
