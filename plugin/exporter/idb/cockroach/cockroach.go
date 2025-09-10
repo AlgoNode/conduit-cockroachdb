@@ -17,15 +17,15 @@ import (
 	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb/cockroach/internal/writer"
 	"github.com/algorand/go-algorand-sdk/v2/protocol"
 	"github.com/algorand/go-algorand-sdk/v2/protocol/config"
-	"github.com/algorand/indexer/idb"
+	"github.com/algorand/indexer/v3/idb"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	log "github.com/sirupsen/logrus"
 
-	itypes "github.com/algorand/indexer/types"
 	"github.com/algorand/indexer/v3/idb/migration"
+	itypes "github.com/algorand/indexer/v3/types"
 
 	sdk "github.com/algorand/go-algorand-sdk/v2/types"
 )
@@ -527,11 +527,9 @@ func (db *IndexerDb) GetBlock(ctx context.Context, round uint64, options idb.Get
 	panic(msgMethodNotImplemented("GetBlock"))
 }
 
-/*
-// The next multiple functions return a channel with results as well as the latest round
-// accounted.
-BlockHeaders(ctx context.Context, bf BlockHeaderFilter) (<-chan BlockRow, uint64)
-*/
+func (db *IndexerDb) BlockHeaders(ctx context.Context, bf idb.BlockHeaderFilter) (<-chan idb.BlockRow, uint64) {
+	panic(msgMethodNotImplemented("BlockHeaders"))
+}
 
 func (db *IndexerDb) Transactions(ctx context.Context, tf idb.TransactionFilter) (<-chan idb.TxnRow, uint64) {
 	panic(msgMethodNotImplemented("Transactions"))
