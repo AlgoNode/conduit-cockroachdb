@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb/cockroach/internal/types"
-	"github.com/algorand/go-algorand-sdk/v2/encoding/msgpack"
-	sdk "github.com/algorand/go-algorand-sdk/v2/types"
-	itypes "github.com/algorand/indexer/v3/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb"
+	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb/cockroach/internal/types"
+	"github.com/algorand/indexer/v3/idb"
+	itypes "github.com/algorand/indexer/v3/types"
+
+	"github.com/algorand/go-algorand-sdk/v2/encoding/msgpack"
+	sdk "github.com/algorand/go-algorand-sdk/v2/types"
 )
 
 func TestEncodeSignedTxnWithAD(t *testing.T) {
@@ -42,7 +43,7 @@ func TestEncodeSignedTxnWithAD(t *testing.T) {
 	var stxn sdk.SignedTxnWithAD
 	for _, mt := range testTxns {
 		t.Run(mt.name, func(t *testing.T) {
-			msgpack.Decode(mt.msgpack, &stxn)
+			require.NoError(t, msgpack.Decode(mt.msgpack, &stxn))
 			js := EncodeSignedTxnWithAD(stxn)
 			require.Equal(t, mt.json, string(js))
 		})
@@ -221,21 +222,35 @@ func TestBlockHeaderEncoding(t *testing.T) {
 	var branch sdk.BlockHash
 	branch[0] = 5
 
+	var branch512 sdk.Sha512Digest
+	branch512[0] = 6
+
+	var sha512Commitment sdk.Sha512Digest
+	sha512Commitment[0] = 7
+
 	header := sdk.BlockHeader{
-		Round:  3,
-		Branch: branch,
+		Round:     3,
+		Branch:    branch,
+		Branch512: branch512,
+		TxnCommitments: sdk.TxnCommitments{
+			NativeSha512_256Commitment: sdk.Digest{8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+			Sha256Commitment:           sdk.Digest{9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+			Sha512Commitment:           sha512Commitment,
+		},
 		RewardsState: sdk.RewardsState{
 			FeeSink:     newaddr(),
 			RewardsPool: newaddr(),
 		},
 		ParticipationUpdates: sdk.ParticipationUpdates{
 			ExpiredParticipationAccounts: []sdk.Address{newaddr()},
+			AbsentParticipationAccounts:  []sdk.Address{newaddr()},
 		},
+		Proposer: newaddr(),
 	}
 
 	buf := EncodeBlockHeader(header)
 
-	template := `{"fees":"AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=","partupdrmv":["%s"],"prev":"BQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=","rnd":3,"rwd":"AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="}`
+	template := `{"fees":"AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=","partupdabs":["AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJVBPJXY"],"partupdrmv":["%s"],"prev":"BQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=","prev512":"BgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==","prp":"AUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITAR5VI","rnd":3,"rwd":"AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=","txn":"CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=","txn256":"CQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=","txn512":"BwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="}`
 	expectedString := fmt.Sprintf(template, "AMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANVWEXNA")
 	assert.Equal(t, expectedString, string(buf))
 
@@ -244,7 +259,8 @@ func TestBlockHeaderEncoding(t *testing.T) {
 	assert.Equal(t, header, headerNew)
 
 	// Lenient decode from the corrupted data
-	badString := fmt.Sprintf(template, "AwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
+	badTemplate := `{"fees":"AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=","partupdabs":["AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJVBPJXY"],"partupdrmv":["%s"],"prev":"BQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=","prev512":"BgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==","prp":"AUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITAR5VI","rnd":3,"rwd":"AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=","txn":"CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=","txn256":"CQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=","txn512":"BwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="}`
+	badString := fmt.Sprintf(badTemplate, "AwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
 	headerNewFromBad, err := DecodeBlockHeader([]byte(badString))
 	require.NoError(t, err)
 	assert.Equal(t, header, headerNewFromBad)
@@ -539,6 +555,9 @@ func TestLcAccountDataEncoding(t *testing.T) {
 			TotalAssets:         13,
 			TotalBoxes:          20,
 			TotalBoxBytes:       21,
+			LastHeartbeat:       22,
+			LastProposed:        23,
+			IncentiveEligible:   true,
 		},
 		VotingData: sdk.VotingData{
 			VoteID:          voteID,
@@ -551,7 +570,7 @@ func TestLcAccountDataEncoding(t *testing.T) {
 	}
 	buf := EncodeTrimmedLcAccountData(ad)
 
-	expectedString := `{"onl":1,"sel":"DwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=","spend":"BgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=","stprf":"EwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==","tapl":11,"tapp":10,"tas":13,"tasp":12,"tbx":20,"tbxb":21,"teap":9,"tsch":{"nbs":8,"nui":7},"vote":"DgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=","voteFst":16,"voteKD":18,"voteLst":17}`
+	expectedString := `{"ie":true,"lhb":22,"lpr":23,"onl":1,"sel":"DwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=","spend":"BgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=","stprf":"EwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==","tapl":11,"tapp":10,"tas":13,"tasp":12,"tbx":20,"tbxb":21,"teap":9,"tsch":{"nbs":8,"nui":7},"vote":"DgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=","voteFst":16,"voteKD":18,"voteLst":17}`
 	assert.Equal(t, expectedString, string(buf))
 
 	decodedAd, err := DecodeTrimmedLcAccountData(buf)

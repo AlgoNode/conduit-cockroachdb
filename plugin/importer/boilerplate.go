@@ -7,6 +7,7 @@ import (
 	"reflect"
 
 	"github.com/algorand/go-algorand-sdk/v2/client/v2/algod"
+	"github.com/algorand/go-algorand-sdk/v2/client/v2/common/models"
 	"github.com/algorand/go-algorand-sdk/v2/encoding/json"
 	"github.com/algorand/go-algorand-sdk/v2/types"
 	"github.com/labstack/gommon/log"
@@ -100,17 +101,40 @@ func (it *importerPlugin) GetGenesis() (*types.Genesis, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	genesis := types.Genesis{}
-
-	// Don't fail on unknown properties here since the go-algorand and SDK genesis types differ slightly
-	err = json.LenientDecode([]byte(genesisResponse), &genesis)
-	if err != nil {
-		return nil, err
+	if reflect.DeepEqual(genesisResponse, models.Genesis{}) {
+		return nil, fmt.Errorf("unable to fetch genesis file from Algod")
 	}
-	if reflect.DeepEqual(genesis, types.Genesis{}) {
-		return nil, fmt.Errorf("unable to fetch genesis file from Algod v2 API at %s", it.cfg.NetAddr)
+
+	genesis := types.Genesis{
+		SchemaID:    genesisResponse.Id,
+		Network:     genesisResponse.Network,
+		Proto:       genesisResponse.Proto,
+		Allocation:  make([]types.GenesisAllocation, len(genesisResponse.Alloc)),
+		RewardsPool: genesisResponse.Rwd,
+		FeeSink:     genesisResponse.Fees,
+		Timestamp:   int64(genesisResponse.Timestamp),
+		Comment:     genesisResponse.Comment,
+		DevMode:     genesisResponse.Devmode,
 	}
+
+	// Convert allocations
+	for i, alloc := range genesisResponse.Alloc {
+		var state types.Account
+		stateBytes := json.Encode(alloc.State)
+		if stateBytes == nil {
+			return nil, fmt.Errorf("error converting allocation state for address %s: %w", alloc.Addr, err)
+		}
+		err = json.LenientDecode(stateBytes, &state)
+		if err != nil {
+			return nil, fmt.Errorf("error unmarshaling allocation state: %w", err)
+		}
+		genesis.Allocation[i] = types.GenesisAllocation{
+			Address: alloc.Addr,
+			Comment: alloc.Comment,
+			State:   state,
+		}
+	}
+
 	return &genesis, nil
 }
 

@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb"
 	"github.com/jackc/pgx/v4"
 
 	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb/cockroach/internal/encoding"
+	"github.com/algorand/indexer/v3/idb"
 	"github.com/algorand/indexer/v3/util"
 
 	"github.com/algorand/go-algorand-sdk/v2/crypto"
@@ -28,7 +28,7 @@ func transactionAssetID(stxnad *types.SignedTxnWithAD, intra uint, block *types.
 	case types.ApplicationCallTx:
 		assetid = uint64(stxnad.Txn.ApplicationID)
 		if assetid == 0 {
-			assetid = stxnad.ApplyData.ApplicationID
+			assetid = uint64(stxnad.ApplyData.ApplicationID)
 		}
 		if assetid == 0 {
 			if block == nil {
@@ -42,7 +42,7 @@ func transactionAssetID(stxnad *types.SignedTxnWithAD, intra uint, block *types.
 	case types.AssetConfigTx:
 		assetid = uint64(stxnad.Txn.ConfigAsset)
 		if assetid == 0 {
-			assetid = stxnad.ApplyData.ConfigAsset
+			assetid = uint64(stxnad.ApplyData.ConfigAsset)
 		}
 		if assetid == 0 {
 			if block == nil {

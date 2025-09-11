@@ -16,8 +16,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb"
 	"github.com/algorand/avm-abi/apps"
+	"github.com/algorand/indexer/v3/idb"
 
 	"github.com/algorand/indexer/v3/types"
 	"github.com/algorand/indexer/v3/util"
@@ -43,6 +43,7 @@ type txnRow struct {
 	txid     string
 	txn      string
 	extra    string
+	note3    []byte
 }
 
 // txnQuery is a test helper for checking the txn table.
@@ -59,7 +60,7 @@ func txnQuery(db *pgxpool.Pool, query string) ([]txnRow, error) {
 		var txn []byte
 		err = rows.Scan(
 			&result.round, &result.intra, &result.typeenum, &result.asset, &txid,
-			&txn, &result.extra)
+			&txn, &result.extra, &result.note3)
 		if err != nil {
 			return nil, err
 		}
@@ -221,9 +222,10 @@ func TestWriterTxnTableBasic(t *testing.T) {
 	var txid []byte
 	var txn []byte
 	var extra []byte
+	var note3 []byte
 
 	require.True(t, rows.Next())
-	err = rows.Scan(&round, &intra, &typeenum, &asset, &txid, &txn, &extra)
+	err = rows.Scan(&round, &intra, &typeenum, &asset, &txid, &txn, &extra, &note3)
 	require.NoError(t, err)
 	assert.Equal(t, block.Round, sdk.Round(round))
 	assert.Equal(t, uint64(0), intra)
@@ -238,7 +240,7 @@ func TestWriterTxnTableBasic(t *testing.T) {
 	assert.Equal(t, "{}", string(extra))
 
 	require.True(t, rows.Next())
-	err = rows.Scan(&round, &intra, &typeenum, &asset, &txid, &txn, &extra)
+	err = rows.Scan(&round, &intra, &typeenum, &asset, &txid, &txn, &extra, &note3)
 	require.NoError(t, err)
 	assert.Equal(t, block.Round, sdk.Round(round))
 	assert.Equal(t, uint64(1), intra)
