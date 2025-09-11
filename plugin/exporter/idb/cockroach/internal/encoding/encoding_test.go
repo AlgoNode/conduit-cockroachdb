@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/algonode/conduit-cockroachdb/plugin/exporter/idb/cockroach/internal/types"
 	"github.com/algorand/indexer/v3/idb"
-	"github.com/algorand/indexer/v3/idb/postgres/internal/types"
 	itypes "github.com/algorand/indexer/v3/types"
 
 	"github.com/algorand/go-algorand-sdk/v2/encoding/msgpack"

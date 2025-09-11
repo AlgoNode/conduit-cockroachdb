@@ -62,3 +62,47 @@ func (db *dummyIndexerDb) SetNetworkState(genesis sdk.Digest) error {
 func (db *dummyIndexerDb) DeleteTransactions(ctx context.Context, keep uint64) error {
 	return nil
 }
+
+func (db *dummyIndexerDb) AppLocalState(ctx context.Context, filter idb.ApplicationQuery) (<-chan idb.AppLocalStateRow, uint64) {
+	return nil, 0
+}
+
+func (db *dummyIndexerDb) ApplicationBoxes(ctx context.Context, filter idb.ApplicationBoxQuery) (<-chan idb.ApplicationBoxRow, uint64) {
+	return nil, 0
+}
+
+func (db *dummyIndexerDb) Applications(ctx context.Context, filter idb.ApplicationQuery) (<-chan idb.ApplicationRow, uint64) {
+	return nil, 0
+}
+
+func (db *dummyIndexerDb) AssetBalances(ctx context.Context, abq idb.AssetBalanceQuery) (<-chan idb.AssetBalanceRow, uint64) {
+	return nil, 0
+}
+
+func (db *dummyIndexerDb) Assets(ctx context.Context, filter idb.AssetsQuery) (<-chan idb.AssetRow, uint64) {
+	return nil, 0
+}
+
+func (db *dummyIndexerDb) Blocks(ctx context.Context, bf idb.BlockHeaderFilter) (<-chan idb.BlockRow, uint64) {
+	return nil, 0
+}
+
+func (db *dummyIndexerDb) GetBlock(ctx context.Context, round uint64, options idb.GetBlockOptions) (sdk.BlockHeader, []idb.TxnRow, error) {
+	return sdk.BlockHeader{}, nil, nil
+}
+
+func (db *dummyIndexerDb) BlockHeaders(ctx context.Context, bf idb.BlockHeaderFilter) (<-chan idb.BlockRow, uint64) {
+	return nil, 0
+}
+
+func (db *dummyIndexerDb) GetAccounts(ctx context.Context, opts idb.AccountQueryOptions) (<-chan idb.AccountRow, uint64) {
+	return nil, 0
+}
+
+func (db *dummyIndexerDb) GetSpecialAccounts(ctx context.Context) (types.SpecialAddresses, error) {
+	return types.SpecialAddresses{}, nil
+}
+
+func (db *dummyIndexerDb) Transactions(ctx context.Context, tf idb.TransactionFilter) (<-chan idb.TxnRow, uint64) {
+	return nil, 0
+}
