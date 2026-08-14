@@ -1,12 +1,10 @@
 module github.com/algonode/conduit-cockroachdb
 
-go 1.23.0
-
-toolchain go1.24.5
+go 1.25.0
 
 require (
-	github.com/algorand/conduit v1.9.0
-	github.com/algorand/go-algorand-sdk/v2 v2.11.0
+	github.com/algorand/conduit v1.10.0
+	github.com/algorand/go-algorand-sdk/v2 v2.11.2-0.20260730212803-2b779fd6c4c3
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0
@@ -15,7 +13,7 @@ require (
 require (
 	github.com/algorand/avm-abi v0.2.0
 	github.com/algorand/go-codec/codec v1.1.10
-	github.com/algorand/indexer/v3 v3.9.0
+	github.com/algorand/indexer/v3 v3.10.0
 	github.com/jackc/pgconn v1.14.3
 	github.com/jackc/pgerrcode v0.0.0-20240316143900-6e2875d9b438
 	github.com/jackc/pgx/v4 v4.18.3
@@ -25,7 +23,6 @@ require (
 )
 
 require (
-	github.com/algorand/go-algorand-sdk v1.24.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.20.0 // indirect
 	github.com/klauspost/compress v1.17.11 // indirect
 	github.com/oasdiff/yaml v0.0.0-20250309154309-f31be36b4037 // indirect
@@ -35,7 +32,6 @@ require (
 
 require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
-	github.com/algorand/indexer v0.0.0-20230616170702-3979f710eae2
 	github.com/algorand/oapi-codegen v1.12.0-algorand.0 // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -55,7 +51,6 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/invopop/yaml v0.3.1 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
@@ -92,11 +87,11 @@ require (
 	go.opentelemetry.io/otel/trace v1.33.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
-	golang.org/x/crypto v0.38.0 // indirect
-	golang.org/x/net v0.40.0 // indirect
-	golang.org/x/sync v0.14.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/text v0.25.0 // indirect
+	golang.org/x/crypto v0.45.0 // indirect
+	golang.org/x/net v0.47.0 // indirect
+	golang.org/x/sync v0.18.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
 	google.golang.org/protobuf v1.36.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
